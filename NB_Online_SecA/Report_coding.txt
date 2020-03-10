@@ -1,0 +1,5 @@
+sample no: 100, feat:[8.5839, 8.8262, 5.9282], actual-class:2, predicted-class: 1
+sample no: 101, feat:[17.5285, 1.418, 12.2175], actual-class:1, predicted-class: 2
+sample no: 200, feat:[15.1319, 0.9429, 12.279], actual-class:3, predicted-class: 2
+sample no: 201, feat:[1.8164, 4.9567, 1.9919], actual-class:2, predicted-class: 3
+accuracy : 98.66666666666667
