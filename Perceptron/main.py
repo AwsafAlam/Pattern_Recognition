@@ -40,13 +40,25 @@ class DataStore:
             sigma = self.get_standard_deviation(i)
             self.sd.append(sigma)
 
+    def print_features(self):
+        print(self.features)
+        print("----------------------")
+
 
 def fileRead():
-    f = open("Test.txt")
+    f = open("Train.txt")
     test_data = f.readlines()
     f.close()
-    for line in test_data:
+    noOfFeatures , noOfClasses , datasetSize = map(int, test_data[0].split())
+    for line in test_data[1:]:
         print(line)
+        data = line.split()
+        givenCls = data[noOfFeatures] # last element of array
+        if givenCls not in Processed_DataSet: # saving features for each distinct classes
+            Processed_DataSet[givenCls] = DataStore(givenCls)
+
+        Processed_DataSet[givenCls].features.append(data[: noOfFeatures])
+    
 
 
 if __name__ == "__main__":
