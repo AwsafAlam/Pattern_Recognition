@@ -79,25 +79,7 @@ def read_dataset():
     # print(Object_Dictionary)
 
 
-def train():
-    global Classes, Features, Object_Dictionary, TrainingSize
-  
-    randnums= np.random.randint(1,26,Features + 1) # initialize random weight vector
-    l = 0.07 # learning rate -> magnitude of change for our weights during each step through our training
-    t = 100 # threshold / no. of iterations allowed
-    
-
-  # 4. while misclassified_set is not empty: misclassified <- {} for k <- len(training_data): vector_class = get_class(training_data[k]) discreminent = dot_product(w', training_data[k]) if vector_class is misclassified: misclassified_set <- training_data[k] cost = cost_function(misclassified_set) w' = w - l*cost
-  # Here cost_function = summation of all misclassified vectors with their respective
-
-    for key in Object_Dictionary: # obtain mean and std. store in the object itself
-        obj = Object_Dictionary[key]
-        obj.calc_mean()
-        obj.calc_standard_deviation()
-        obj.print_features()
-
-
-def test_accuracy():
+def test_accuracy(perceptron):
     global Features, Object_Dictionary, TrainingSize, correct
 
     f = open("./test.txt", "r")
@@ -110,31 +92,38 @@ def test_accuracy():
     for line in lines:
         sample_count += 1
 
-        test_vector = []
         temp = line.rstrip()
         temp = temp.split()
+        # for i in range(len(temp)):
+        #     t = temp[i].strip()
+        #     if len(t):
+        #         test_vector.append(float(t))
 
-        for i in range(len(temp)):
-            t = temp[i].strip()
-            if len(t):
-                test_vector.append(float(t))
-
-        class_name = temp[Features]
-        print(test_vector,class_name)
+        class_name = int(temp[Features])
+        # print("Class: {} [Sample - {}] -------\n".format(class_name, sample_count))
+        inputs = np.array(temp[: Features]).astype(float)
+        output = perceptron.predict(inputs)
+        if output == class_name or (output == 0 and class_name == 2):
+          correct += 1
+        else:
+          #incorrect
+          print("[Sample - {}] {} {} {}\n".format(sample_count, inputs, class_name, output))
     
-    # acc = (correct / float(TrainingSize)) * 100.0
-    # print("accuracy: {} / {} = {}%".format(correct,TrainingSize,acc))
+    acc = (correct / float(TrainingSize)) * 100.0
+    print("accuracy: {} / {} = {}%".format(correct,TrainingSize,acc))
     # wr.close()
 
 
 if __name__ == "__main__":
     read_dataset()
     # perceptron = Perceptron(4, threshold=10, learning_rate=1)
-    perceptron = Perceptron(4)
+    perceptron = Perceptron(Features)
     perceptron.train(input_matrix, labels)
+    print("Weight Vectors")
+    perceptron.print_weight_vec()
+
+    # inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
+    # output = perceptron.predict(inputs)
+    # print(output) # expected class = 1
     
-    inputs = np.array([2.119567842,	4.114841397,	6.711635823, 7.361031797]).astype(float)
-    output = perceptron.predict(inputs)
-    print(output) # expected class = 1
-    # train()
-    # test_accuracy()
+    test_accuracy(perceptron)

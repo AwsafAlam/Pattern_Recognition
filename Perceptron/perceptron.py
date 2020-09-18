@@ -19,7 +19,7 @@ class Perceptron:
       Y.append(result)
     return np.array(Y)
     
-  def fit(self, X, Y, epochs = 1, lr = 1):
+  def fit(self, X, Y, epochs = 100, lr = 1):
     self.w = np.ones(X.shape[1])
     self.b = 0
     accuracy = {}
@@ -48,11 +48,11 @@ class Perceptron:
         
     print(max_accuracy)
     #plot the accuracy values over epochs
-    plt.plot(accuracy.values())
-    plt.xlabel("Epoch #")
-    plt.ylabel("Accuracy")
-    plt.ylim([0, 1])
-    plt.show()
+    # plt.plot(accuracy.values())
+    # plt.xlabel("Epoch #")
+    # plt.ylabel("Accuracy")
+    # plt.ylim([0, 1])
+    # plt.show()
     
     #return the weight matrix, that contains weights over all epochs
     return np.array(wt_matrix)
