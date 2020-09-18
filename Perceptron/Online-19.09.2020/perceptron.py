@@ -33,8 +33,9 @@ class Perceptron(object):
 
             elif label == 2 and prediction == 1: # class2 misclassified
               self.weights[1:] += self.learning_rate * inputs * -1
-              self.weights[0] += self.learning_rate
+              self.weights[0] += self.learning_rate * -1
             else:
+              # print("Converging --")
               pass # do nothing
             # self.weights[1:] += self.learning_rate * (label- 1 - prediction) * inputs
             # self.weights[0] += self.learning_rate * (label- 1 - prediction)
