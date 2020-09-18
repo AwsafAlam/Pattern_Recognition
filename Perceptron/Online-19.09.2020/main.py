@@ -1,11 +1,17 @@
 import numpy as np
 import math
+from perceptron import Perceptron
 
 Features = 0
 Classes = 0
 TrainingSize = 0
 Object_Dictionary = {}
 correct = 0
+
+weight_vec = []
+
+input_matrix = []
+labels = []
 
 class Object:
     def __init__(self, class_name):
@@ -59,27 +65,27 @@ def read_dataset():
     f.close()
 
     Features, Classes, TrainingSize = map(int, lines[0].split())
-
     for i in range(TrainingSize):
         data = lines[i + 1].split()
         # print(data)
         class_name = data[Features] # last element of data array
-
+        labels.append(int(class_name))
         if class_name not in Object_Dictionary: # saving features for each distinct classes
             Object_Dictionary[class_name] = Object(class_name)
 
         Object_Dictionary[class_name].features.append(data[: Features])
+        input_matrix.append(np.array(data[: Features]).astype(float))
 
     # print(Object_Dictionary)
 
 
 def train():
     global Classes, Features, Object_Dictionary, TrainingSize
-  # 1. Initialize w' with random number length of (number of features + 1)
-
-  # 2. let l = learning rate set to a fixed value.
-
-  # 3. set t = 0
+  
+    randnums= np.random.randint(1,26,Features + 1) # initialize random weight vector
+    l = 0.07 # learning rate -> magnitude of change for our weights during each step through our training
+    t = 100 # threshold / no. of iterations allowed
+    
 
   # 4. while misclassified_set is not empty: misclassified <- {} for k <- len(training_data): vector_class = get_class(training_data[k]) discreminent = dot_product(w', training_data[k]) if vector_class is misclassified: misclassified_set <- training_data[k] cost = cost_function(misclassified_set) w' = w - l*cost
   # Here cost_function = summation of all misclassified vectors with their respective
@@ -123,5 +129,12 @@ def test_accuracy():
 
 if __name__ == "__main__":
     read_dataset()
-    train()
-    test_accuracy()
+    # perceptron = Perceptron(4, threshold=10, learning_rate=1)
+    perceptron = Perceptron(4)
+    perceptron.train(input_matrix, labels)
+    
+    inputs = np.array([2.119567842,	4.114841397,	6.711635823, 7.361031797]).astype(float)
+    output = perceptron.predict(inputs)
+    print(output) # expected class = 1
+    # train()
+    # test_accuracy()
