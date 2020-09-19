@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 
 class Pocket:
-    '''The Pocket class keeps the best weights seen so fat in the learning process.
+    '''The Pocket class keeps the best weights seen so far in the learning process.
 
     Parameters
     ----------
-    number_of_attributes: int
+    features: int
     The number of attributes of the data set.
 
     Attributes
@@ -17,8 +17,8 @@ class Pocket:
     misclassify_count: int
     The number of misclassification corresponding to the best weights.
     '''
-    def __init__(self, number_of_attributes):
-        self.best_weights = np.zeros(number_of_attributes + 1)
+    def __init__(self, features):
+        self.best_weights = np.zeros(features + 1)
         self.misclassify_count = -1 # -1 means the class is initialized but does not have valid value
 
 class PocketClassifier:
@@ -27,7 +27,7 @@ class PocketClassifier:
 
     Parameters
     ----------
-    number_of_attributes : int
+    features : int
     The number of attributes of the data set.
 
     class_labels : tuple of the class labels
@@ -45,12 +45,12 @@ class PocketClassifier:
     misclassify_record: list of int
     The number of misclassification for each training sample.
     '''
-    def __init__(self, number_of_attributes: int, class_labels: ()):
+    def __init__(self, features, class_labels):
         # Initialize the Pocket class
-        self.pocket = Pocket(number_of_attributes)
+        self.pocket = Pocket(features)
         # Initialize the weights to zero
         # The size is the number of attributes plus the bias, i.e. x_0 * w_0
-        self.weights = np.zeros(number_of_attributes + 1)
+        self.weights = np.zeros(features + 1)
 
         # Record of the number of misclassify for each training sample
         self.misclassify_record = []

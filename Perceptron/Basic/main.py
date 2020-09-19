@@ -54,7 +54,7 @@ class Perceptron(object):
             ## Basic perceptron
             # self.weights[1:] += self.learning_rate * (label - prediction) * inputs
             # self.weights[0] += self.learning_rate * (label - prediction)
-            
+
 class Object:
     def __init__(self, class_name):
         self.class_name = class_name

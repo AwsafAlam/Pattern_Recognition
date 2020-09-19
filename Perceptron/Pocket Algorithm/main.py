@@ -1,61 +1,18 @@
 import numpy as np
 import math
 from perceptron import Perceptron
+from pocket import PocketClassifier
 
 Features = 0
 Classes = 0
 TrainingSize = 0
 Object_Dictionary = {}
 correct = 0
-
+class_labels = []
 weight_vec = []
 
 input_matrix = []
 labels = []
-
-class Object:
-    def __init__(self, class_name):
-        self.class_name = class_name
-        self.features = []
-        self.mean = []
-        self.sd = []
-        self.transpose = []
-        self.covariance = []
-        self.determinent = 1.0
-        self.inv_covar = []
-
-    def get_mean(self, feature_no):
-        sz = len(self.features)
-        temp = np.array([i[feature_no] for i in self.features]).astype(float)
-
-        return np.mean(temp)
-
-    def get_standard_deviation(self, feature_no):
-        sz = len(self.features)
-        temp = np.array([i[feature_no] for i in self.features]).astype(float)
-
-        return np.std(temp)
-
-    def calc_mean(self):
-        global Features
-        for i in range(Features):
-            mu = self.get_mean(i)
-            self.mean.append(mu)
-
-    def calc_standard_deviation(self):
-        global Features
-        for i in range(Features):
-            sigma = self.get_standard_deviation(i)
-            self.sd.append(sigma)
-
-    def covariance_mat(self):
-        pass
-    
-    def print_features(self):
-        print(len(self.features))
-        print(self.features)
-        print("----------------------")
-
 
 def read_dataset():
     global Features, Classes, TrainingSize, Object_Dictionary
@@ -70,13 +27,13 @@ def read_dataset():
         # print(data)
         class_name = data[Features] # last element of data array
         labels.append(int(class_name))
-        if class_name not in Object_Dictionary: # saving features for each distinct classes
-            Object_Dictionary[class_name] = Object(class_name)
-
-        Object_Dictionary[class_name].features.append(data[: Features])
         input_matrix.append(np.array(data[: Features]).astype(float))
 
-    # print(Object_Dictionary)
+        if class_name not in class_labels: # saving features for each distinct classes
+            class_labels.append(class_name)
+            # Object_Dictionary[class_name] = Object(class_name)
+
+        # Object_Dictionary[class_name].features.append(data[: Features])
 
 
 def test_accuracy(perceptron):
@@ -87,18 +44,13 @@ def test_accuracy(perceptron):
     f.close()
 
     # wr = open("Report_coding.txt", "w")
-
     sample_count = 0
     for line in lines:
         sample_count += 1
 
         temp = line.rstrip()
         temp = temp.split()
-        # for i in range(len(temp)):
-        #     t = temp[i].strip()
-        #     if len(t):
-        #         test_vector.append(float(t))
-
+        
         class_name = int(temp[Features])
         # print("Class: {} [Sample - {}] -------\n".format(class_name, sample_count))
         inputs = np.array(temp[: Features]).astype(float)
@@ -116,14 +68,19 @@ def test_accuracy(perceptron):
 
 if __name__ == "__main__":
     read_dataset()
+    # Using Pocket Algorithm
+    print(class_labels)
+    pocket = PocketClassifier(Features, class_labels)
+    pocket.train(input_matrix, labels)
+
     # perceptron = Perceptron(4, threshold=10, learning_rate=1)
-    perceptron = Perceptron(Features)
-    perceptron.train(input_matrix, labels)
-    print("Weight Vectors")
-    perceptron.print_weight_vec()
+    # perceptron = Perceptron(Features)
+    # perceptron.train(input_matrix, labels)
+    # print("Weight Vectors")
+    # perceptron.print_weight_vec()
 
     # inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
     # output = perceptron.predict(inputs)
     # print(output) # expected class = 1
     
-    test_accuracy(perceptron)
+    # test_accuracy(perceptron)
