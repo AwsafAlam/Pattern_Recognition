@@ -25,7 +25,7 @@ class Perceptron(object):
           for inputs, label in zip(training_inputs, labels):
             prediction = self.predict(inputs) # output of unit activation function
             # print(inputs, label, prediction)
-            
+            ## Reward punish -- ?
             if label == 1 and prediction == 0: # class1 misclassified.
               # Wi = Wi + n*d*input -> d = 1 or -1.
               self.weights[1:] += self.learning_rate * inputs * 1
@@ -37,5 +37,7 @@ class Perceptron(object):
             else:
               # print("Converging --")
               pass # do nothing
-            # self.weights[1:] += self.learning_rate * (label- 1 - prediction) * inputs
-            # self.weights[0] += self.learning_rate * (label- 1 - prediction)
+
+            ## Basic perceptron
+            # self.weights[1:] += self.learning_rate * (label - prediction) * inputs
+            # self.weights[0] += self.learning_rate * (label - prediction)
