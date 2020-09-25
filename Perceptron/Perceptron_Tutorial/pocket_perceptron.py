@@ -1,147 +1,168 @@
 import numpy as np
 import pandas as pd
 
-MAXEPOCH = 500
+np.random.seed(21) # fixed seed for random distribution of weight vector
 
-file = open("Train.txt")
-
-lines = file.readlines()
-
-numClass, numFeature, datasetLen = 0, 0, 0
+Threshold = 100
+Pocket_Iter = 10
+Classes, Features = 0, 0
+TrainingSize, TestSize = 0, 0
+Learning_Rate = 0.01
 
 dataset = []
-count = 0
-for line in lines:
-    if count == 0:
-        var = line.split()
-        numFeature = int(var[0])
-        numClass   = int(var[1])
-        datasetLen = int(var[2])
-    else:
-        var = line.split()
-        data = []
-        for i in range(numFeature):
-          data.append(float(var[i]))
-        data.append(int(var[numFeature]))
-        dataset.append(data)
- 
-    count += 1
+input_matrix = []
+labels = []
+weight_vec = []
 
-file = open("Test.txt")
+# Reading training data
+f = open("train.txt", "r")
+lines = f.readlines()
+f.close()
+Features, Classes, TrainingSize = map(int, lines[0].split())
 
-lines = file.readlines()
-test_dataset = []
-np.random.seed(21)
-wp = np.random.uniform(-1,1,numFeature+1)
-w = wp
+# init weight vector randomly
+weight_vec = np.random.uniform(-1,1, (Features+1) )
 
-for line in lines:
-    var = line.split()
+for i in range(TrainingSize):
+  data = lines[i + 1].split()
+  # print(data)
+  class_name = data[Features] # last element of data array
+  labels.append(int(class_name))
+  input_matrix.append(np.array(data[: Features]).astype(float))
+
+  temp = []
+  for j in range(Features):
+    temp.append(float(data[j]))
+  temp.append(int(data[Features]))
+  dataset.append(temp)
+
+
+def test(weight_vec, report = False):
+  global Features, TrainingSize, TestSize, Classes
+
+  f = open("test.txt", "r")
+  lines = f.readlines()
+  f.close()
+
+  # wr = open("Report.txt", "w")
+  test_dataset = []
+  sample_count, correct = 0 , 0
+
+  for line in lines:
+    sample_count += 1
+    temp = line.rstrip()
+    temp = temp.split()
+    class_name = int(temp[Features])
+    inputs = np.array(temp[: Features]).astype(float)
+      
     data = []
-    for i in range(numFeature):
-        data.append(float(var[i]))
-    data.append(int(var[numFeature]))
-    test_dataset.append(data)
+    for i in range(Features):
+        data.append(float(temp[i]))
+    data.append(int(temp[Features]))
 
-def test(dataset,w):
-    count_accurate = 0
-    for data in dataset:
-        x = np.array(data)
-        group = x[numFeature]
-        x[numFeature] = 1
-        x = np.array(x)
-        x = x.reshape(numFeature+1,1)
-        dot_product = np.dot(w,x)[0]
-        predicted = -1
-        if dot_product >= 0:
-            predicted = 1
-        else:
-            predicted = 2
+    x = np.array(data)
+    x[Features] = 1
+    x = np.array(x)
+    x = x.reshape(Features+1,1)
+    # dot_prod = np.dot(weight_vec[1:],inputs) + weight_vec[0]
+    dot_prod = np.dot(weight_vec, x)[0]
+    predicted = -1
+    if dot_prod > 0:
+        predicted = 1
+    else:
+        predicted = 2
 
-        if predicted==group:
-            count_accurate += 1
+    if predicted == class_name:
+        correct += 1
+    else:
+      if report:
+        print("[Sample-{}] {} - {} - {}\n".format(sample_count, inputs, class_name, predicted))
+      pass
 
-    print("Accuracy :",float((count_accurate/len(dataset))*100))
-    
-    return float(count_accurate/len(dataset))
+  TestSize = sample_count
+  print("Accuracy :",float((correct/float(sample_count))*100))
+  
+  # returns no. of misclassified
+  return (sample_count - correct)
 
 
 def train_basic_perceptron():
   """
-  docstring
+  Basic Perceptron
   """
-  global w, dataset, MAXEPOCH, datasetLen
-  learning_rate = 0.01
-  t = 0
-
-  for i in range(MAXEPOCH):
-      Y = []
-      arr_dx = []
-      for j in range(datasetLen):
-          x = np.array(dataset[j])
-          group = x[numFeature]
-          x[numFeature] = 1
-          x = x.reshape(numFeature+1,1)
-          dot_product = np.dot(w,x)[0]
-          if(group == 2 and dot_product>0):
-              Y.append(x)
-              arr_dx.append(1)
-          elif(group ==1 and dot_product<0):
-              Y.append(x)
-              arr_dx.append(-1)
-          else:
-              pass
-      
-      sum = np.zeros(numFeature+1)
-      
-      for j in range(len(Y)):
-          sum += arr_dx[j]*Y[j].transpose()[0]
-      
-      
-      w = w - learning_rate*sum
-      print("Iter {} => {}".format(i,"---"))
-      if len(Y) == 0:
-          break        
+  global weight_vec, dataset, Threshold, TrainingSize, Learning_Rate, Features
   
-def train_pocket():
-  """
-  docstring
-  """
-  global w, wp, dataset, MAXEPOCH, datasetLen
-  learning_rate = 0.01
-  t = 0
-  train_basic_perceptron()
-	# test(dataset,w)
-  misclassification = test(dataset,w) * len(dataset)
-  ##
-  for i in range(MAXEPOCH):
-    count = 0 
-    for i in range(datasetLen):
-        original = dataset[i]
-        x = np.array(dataset[i])
-        group = x[numFeature]
-        x[numFeature] = 1
-        x = x.reshape(numFeature+1,1)
-        dot_product = np.dot(w,x)[0]
-        if dot_product<=0 and group == 1:
-            count += 1
-            w = w + np.array(original)
-        elif dot_product >0 and group == 2:
-            w = w - np.array(original)
-            count += 1
+  for i in range(Threshold):
+    Y = []
+    arr_dx = []
+    for j in range(TrainingSize):
+        x = np.array(dataset[j])
+        class_name = x[Features]
+        x[Features] = 1
+        x = x.reshape(Features+1,1)
+        dot_product = np.dot(weight_vec,x)[0]
+        if (class_name == 2 and dot_product > 0):
+            Y.append(x)
+            arr_dx.append(1)
+        elif (class_name ==1 and dot_product < 0):
+            Y.append(x)
+            arr_dx.append(-1)
         else:
             pass
     
-    if count< misclassification:
-        misclassification = count
-        wp = w
+    sum = np.zeros(Features+1)
     
-    if count == 0:
+    for j in range(len(Y)):
+        sum += arr_dx[j]*Y[j].transpose()[0]
+    
+    
+    weight_vec = weight_vec - Learning_Rate * sum
+    print("Iter {} => {}".format(i,"---"))
+    if len(Y) == 0:
+        break        
+  
+
+def activation_func(inputs, weights):
+  summation = np.dot(inputs, weights[1:]) + weights[0]
+  if summation > 0: # Belongs to W1
+    activation = 1
+  else: # Belongs to W2
+    activation = 0            
+  return activation
+
+def train_pocket():
+  """
+  Pocket ALgorithm
+  """
+  global weight_vec, dataset, Threshold, TrainingSize, Learning_Rate, Features
+
+  # train_basic_perceptron()
+  w = np.copy(weight_vec)
+  misclassified = test(w)
+  print(misclassified)
+
+  # count = TestSize
+  count = misclassified
+  for iter in range(Threshold):
+    print("Pocket Iteration {} ==========".format(iter))
+    train_basic_perceptron() # W is updated according to basic perceptron algo
+    misclassified = test(weight_vec)
+    
+    if misclassified < count:
+      count = misclassified
+      w = np.copy(weight_vec)
+
+    if misclassified == 0:
         break
-	
+  
+  weight_vec = np.copy(w)
+  
 
 if __name__ == "__main__":
+  
+  ## read_training_dataset()
+  # train_basic_perceptron()
   train_pocket()
-  print('Final Weight : ', w)
-  print(wp)
-  test(test_dataset,wp)
+
+  print('Final Weight : ', weight_vec)
+  test(weight_vec, True)
