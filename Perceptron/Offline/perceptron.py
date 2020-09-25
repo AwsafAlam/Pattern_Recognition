@@ -4,8 +4,9 @@ import pandas as pd
 np.random.seed(21) # fixed seed for random distribution of weight vector
 
 Threshold = 100
+Pocket_Iter = 10
 Classes, Features = 0, 0
-TrainingSize = 0
+TrainingSize, TestSize = 0, 0
 Learning_Rate = 0.01
 
 dataset = []
@@ -18,6 +19,9 @@ f = open("train.txt", "r")
 lines = f.readlines()
 f.close()
 Features, Classes, TrainingSize = map(int, lines[0].split())
+
+# init weight vector randomly
+weight_vec = np.random.uniform(-1,1, (Features+1) )
 
 for i in range(TrainingSize):
   data = lines[i + 1].split()
@@ -33,14 +37,14 @@ for i in range(TrainingSize):
   dataset.append(temp)
 
 
-def test(weight_vec):
-  global Features, TrainingSize, Classes
+def test(weight_vec, report = False):
+  global Features, TrainingSize, TestSize, Classes
 
   f = open("test.txt", "r")
   lines = f.readlines()
   f.close()
 
-  # wr = open("Report_coding.txt", "w")
+  # wr = open("Report.txt", "w")
   test_dataset = []
   sample_count, correct = 0 , 0
 
@@ -71,12 +75,15 @@ def test(weight_vec):
     if predicted == class_name:
         correct += 1
     else:
-      print("[Sample-{}] {} - {} - {}\n".format(sample_count, inputs, class_name, predicted))
-      # pass
+      if report:
+        print("[Sample-{}] {} - {} - {}\n".format(sample_count, inputs, class_name, predicted))
+      pass
 
+  TestSize = sample_count
   print("Accuracy :",float((correct/float(sample_count))*100))
   
-  return float(correct/sample_count)
+  # returns no. of misclassified
+  return (sample_count - correct)
 
 
 def train_basic_perceptron():
@@ -84,7 +91,6 @@ def train_basic_perceptron():
   Basic Perceptron
   """
   global weight_vec, dataset, Threshold, TrainingSize, Learning_Rate, Features
-  weight_vec = np.random.uniform(-1,1, (Features+1) )
   
   for i in range(Threshold):
     Y = []
@@ -124,12 +130,39 @@ def activation_func(inputs, weights):
     activation = 0            
   return activation
 
+def train_pocket():
+  """
+  Pocket ALgorithm
+  """
+  global weight_vec, dataset, Threshold, TrainingSize, Learning_Rate, Features
 
+  # train_basic_perceptron()
+  w = np.copy(weight_vec)
+  misclassified = test(w)
+  print(misclassified)
+
+  # count = TestSize
+  count = misclassified
+  for iter in range(Threshold):
+    print("Pocket Iteration {} ==========".format(iter))
+    train_basic_perceptron() # W is updated according to basic perceptron algo
+    misclassified = test(weight_vec)
+    
+    if misclassified < count:
+      count = misclassified
+      w = np.copy(weight_vec)
+
+    if misclassified == 0:
+        break
+  
+  weight_vec = np.copy(w)
+  
 
 if __name__ == "__main__":
   
   ## read_training_dataset()
-  train_basic_perceptron()
+  # train_basic_perceptron()
+  train_pocket()
 
   print('Final Weight : ', weight_vec)
-  test(weight_vec)
+  test(weight_vec, True)
