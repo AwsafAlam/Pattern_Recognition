@@ -63,10 +63,9 @@ def test(weight_vec, report = False):
     input_vec = np.array(data)
     input_vec[Features] = 1
     input_vec = np.array(input_vec)
-    input_vec = input_vec.reshape(Features+1,1)
+    input_vec = input_vec.reshape((Features+1),1)
     # dot_prod = np.dot(weight_vec[1:],inputs) + weight_vec[0]
     dot_prod = np.dot(weight_vec, input_vec)[0]
-    predicted = -1
     if dot_prod > 0:
         predicted = 1
     else:
@@ -101,13 +100,14 @@ def train_basic_perceptron():
         class_name = input_vec[Features]
         input_vec[Features] = 1
         input_vec = input_vec.reshape(Features+1,1)
+
         dot_product = np.dot(weight_vec,input_vec)[0]
-        if (class_name == 2 and dot_product > 0):
-            misclassified.append(input_vec)
-            delX.append(1)
-        elif (class_name ==1 and dot_product < 0):
+        if class_name == 1 and dot_product <= 0:
             misclassified.append(input_vec)
             delX.append(-1)
+        elif class_name == 2 and dot_product > 0: # class1 misclassified
+            misclassified.append(input_vec)
+            delX.append(1)
         else:
             pass
     
