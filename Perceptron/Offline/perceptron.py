@@ -194,7 +194,8 @@ def train_reward_punish():
 if __name__ == "__main__":
   
   print("Enter Threshold:")
-  Threshold = int(input()) 
+  Threshold = int(input())
+  
   print("Select Algorithm:\n1: Basic Perceptron\n2: Reward and Punishment\n3: Pocket Algorithm")
   Algo = int(input()) 
   
