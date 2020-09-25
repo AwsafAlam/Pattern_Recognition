@@ -1,7 +1,6 @@
 import numpy as np
 import math
 from perceptron import Perceptron
-from pocket import PocketClassifier
 
 Features = 0
 Classes = 0
