@@ -31,6 +31,8 @@ file = open("Test.txt")
 
 lines = file.readlines()
 test_dataset = []
+np.random.seed(41)
+w = np.random.uniform(-10,10,numFeature+1)
 
 for line in lines:
     var = line.split()
@@ -62,40 +64,45 @@ def test(dataset,w):
     
     return float(count_accurate/len(dataset))
 
-np.random.seed(41)
-w = np.random.uniform(-10,10,numFeature+1)
+def train_basic_perceptron():
+  """
+  docstring
+  """
+  global w, dataset, MAXEPOCH, datasetLen
+  learning_rate = 0.025
+  t = 0
 
-learning_rate = 0.025
-t = 0
+  for i in range(MAXEPOCH):
+      Y = []
+      arr_dx = []
+      for j in range(datasetLen):
+          x = np.array(dataset[j])
+          group = x[numFeature]
+          x[numFeature] = 1
+          x = x.reshape(numFeature+1,1)
+          dot_product = np.dot(w,x)[0]
+          if(group == 2 and dot_product>0):
+              Y.append(x)
+              arr_dx.append(1)
+          elif(group ==1 and dot_product<0):
+              Y.append(x)
+              arr_dx.append(-1)
+          else:
+              pass
+      
+      sum = np.zeros(numFeature+1)
+      
+      for j in range(len(Y)):
+          sum += arr_dx[j]*Y[j].transpose()[0]
+      
+      
+      w = w - learning_rate*sum
+      print("Iter {} => {}".format(i,"---"))
+      if len(Y) == 0:
+          break        
+  
 
-for i in range(MAXEPOCH):
-    Y = []
-    arr_dx = []
-    for j in range(datasetLen):
-        x = np.array(dataset[j])
-        group = x[numFeature]
-        x[numFeature] = 1
-        x = x.reshape(numFeature+1,1)
-        dot_product = np.dot(w,x)[0]
-        if(group == 2 and dot_product>0):
-            Y.append(x)
-            arr_dx.append(1)
-        elif(group ==1 and dot_product<0):
-            Y.append(x)
-            arr_dx.append(-1)
-        else:
-            pass
-    
-    sum = np.zeros(numFeature+1)
-    
-    for j in range(len(Y)):
-        sum += arr_dx[j]*Y[j].transpose()[0]
-    
-    
-    w = w - learning_rate*sum
-    print("Iter {} => {}".format(i,"---"))
-    if len(Y) == 0:
-        break
-        
-print('Final Weight : ', w)
-test(test_dataset,w)
+if __name__ == "__main__":
+  train_basic_perceptron()
+  print('Final Weight : ', w)
+  test(test_dataset,w)

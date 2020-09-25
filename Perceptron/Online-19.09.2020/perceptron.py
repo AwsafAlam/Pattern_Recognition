@@ -15,13 +15,17 @@ class Perceptron(object):
     def print_weight_vec(self):
         print("Weight Vec => ")
         print(self.weights)
+    
+    def getWeight(self):
+      return self.weights
 
     def predict(self, inputs):
-        summation = np.dot(inputs, self.weights[1:]) + self.weights[0]
-        if summation > 0: # Belongs to W1
+        print(inputs)
+        summation = np.dot(self.weights[1:],inputs) + self.weights[0]
+        if summation >= 0: # Belongs to W1
           activation = 1
         else: # Belongs to W2
-          activation = 0            
+          activation = 2            
         return activation
 
     def train(self, training_inputs, labels, dataset):
