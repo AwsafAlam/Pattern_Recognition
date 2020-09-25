@@ -56,14 +56,15 @@ def test_accuracy(perceptron):
         #         test_vector.append(float(t))
 
         class_name = int(temp[Features])
-        # print("Class: {} [Sample - {}] -------\n".format(class_name, sample_count))
         inputs = np.array(temp[: Features]).astype(float)
         output = perceptron.predict(inputs)
+        
         if output == class_name or (output == 0 and class_name == 2):
           correct += 1
         else:
           #incorrect
-          print("[Sample - {}] {} {} {}\n".format(sample_count, inputs, class_name, output))
+        #   print("[Sample - {}] {} {} {}\n".format(sample_count, inputs, class_name, output))
+          pass
     
     acc = (correct / float(TrainingSize)) * 100.0
     print("accuracy: {} / {} = {}%".format(correct,TrainingSize,acc))

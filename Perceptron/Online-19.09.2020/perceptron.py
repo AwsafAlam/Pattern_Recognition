@@ -12,6 +12,7 @@ class Perceptron(object):
         # self.weights = np.zeros(features + 1)
 
     def print_weight_vec(self):
+        print("Weight Vec => ")
         print(self.weights)
 
     def predict(self, inputs):
@@ -23,31 +24,37 @@ class Perceptron(object):
         return activation
 
     def train(self, training_inputs, labels):
+        self.print_weight_vec()
         for i in range(self.threshold):
           print("Iteration {} ==========".format(i))
           misclassified = []
+          delX = []
           for inputs, label in zip(training_inputs, labels):
             prediction = self.predict(inputs) # output of unit activation function
             # print(inputs, label, prediction)
-            ## Reward punish -- ?
+            
             if label == 1 and prediction == 0: # class1 misclassified.
-              # Wi = Wi + n*d*input -> d = 1 or -1.
               misclassified.append(inputs)
-
+              delX.append(-1)
             elif label == 2 and prediction == 1: # class2 misclassified
-              misclassified.append(inputs * -1)
+              misclassified.append(inputs)
+              delX.append(1)
             else:
               # print("Converging --")
               pass # do nothing
           
           print("Misclassified: {} => ".format(len(misclassified)))
-          if len(misclassified) == 0:
+          if i == 3:
             break
-          sum = np.zeros(self.features)
+          
+          sum = np.zeros(self.features + 1)
           for i in range(len(misclassified)):
-            sum += misclassified[i]
-          self.weights[1:] -= self.learning_rate * sum
-          print(self.weights)
+            sum += delX[i] * misclassified[i].transpose()[0]
+          
+          print(sum)
+          self.weights = self.weights - self.learning_rate * sum
+          self.print_weight_vec()
+          
           # self.weights[0] += self.learning_rate # changing the bias
 
           # self.weights[1:] += self.learning_rate * inputs * 1
