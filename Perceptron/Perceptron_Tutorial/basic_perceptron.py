@@ -71,8 +71,8 @@ t = 0
 for i in range(MAXEPOCH):
     Y = []
     arr_dx = []
-    for i in range(datasetLen):
-        x = np.array(dataset[i])
+    for j in range(datasetLen):
+        x = np.array(dataset[j])
         group = x[numFeature]
         x[numFeature] = 1
         x = x.reshape(numFeature+1,1)
@@ -88,12 +88,12 @@ for i in range(MAXEPOCH):
     
     sum = np.zeros(numFeature+1)
     
-    for i in range(len(Y)):
-        sum += arr_dx[i]*Y[i].transpose()[0]
+    for j in range(len(Y)):
+        sum += arr_dx[j]*Y[j].transpose()[0]
     
     
     w = w - learning_rate*sum
-    print("Iter {} => {}".format(i,Y))
+    print("Iter {} => {}".format(i,"---"))
     if len(Y) == 0:
         break
         
