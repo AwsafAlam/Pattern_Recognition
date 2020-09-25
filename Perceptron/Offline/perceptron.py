@@ -169,20 +169,23 @@ def train_reward_punish():
     for j in range(TrainingSize):
       input_vec = np.array(dataset[j])
       temp = np.copy(input_vec)
+      
       class_name = input_vec[Features]
       input_vec[Features] = 1
-      input_vec = input_vec.reshape((Features + 1) ,1)
+      input_vec = input_vec.reshape(Features+1,1)
       dot_product = np.dot(weight_vec,input_vec)[0]
+
       if class_name == 1 and dot_product <= 0:
         # Wi = Wi + n*d*input -> d = 1
         misclassified += 1
-        weight_vec = weight_vec - Learning_Rate * temp
+        weight_vec += Learning_Rate * input_vec.transpose()[0]
 
       elif class_name == 2 and dot_product > 0:
         misclassified += 1
-        weight_vec = weight_vec + Learning_Rate * temp
+        weight_vec += Learning_Rate * input_vec.transpose()[0] * -1
       else:
-          pass
+        # Reward
+        pass
     print(misclassified)
     if misclassified == 0:
         break        
