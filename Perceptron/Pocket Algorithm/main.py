@@ -70,17 +70,17 @@ if __name__ == "__main__":
     read_dataset()
     # Using Pocket Algorithm
     print(class_labels)
-    pocket = PocketClassifier(Features, class_labels)
-    pocket.train(input_matrix, labels)
+    # pocket = PocketClassifier(Features, class_labels)
+    # pocket.train(input_matrix, labels)
 
     # perceptron = Perceptron(4, threshold=10, learning_rate=1)
-    # perceptron = Perceptron(Features)
-    # perceptron.train(input_matrix, labels)
+    perceptron = Perceptron(Features)
+    perceptron.train(input_matrix, labels)
     # print("Weight Vectors")
-    # perceptron.print_weight_vec()
+    perceptron.print_weight_vec()
 
-    # inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
-    # output = perceptron.predict(inputs)
+    inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
+    output = perceptron.predict(inputs)
     # print(output) # expected class = 1
     
     # test_accuracy(perceptron)
