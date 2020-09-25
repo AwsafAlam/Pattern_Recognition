@@ -1,106 +1,19 @@
 import numpy as np
+import pandas as pd
 import math
-# from perceptron import Perceptron
+from perceptron import Perceptron
 
 Features = 0
 Classes = 0
 TrainingSize = 0
-Object_Dictionary = {}
 correct = 0
 
-weight_vec = []
-
+dataset = []
 input_matrix = []
 labels = []
 
-class Perceptron(object):
-
-    def __init__(self, features, threshold=100, learning_rate=0.01):
-        self.threshold = threshold
-        self.learning_rate = float(learning_rate)
-        self.bias = 0
-        self.weights = np.zeros(features + 1)
-
-    def print_weight_vec(self):
-        print(self.weights)
-
-    def predict(self, inputs):
-        summation = np.dot(inputs, self.weights[1:]) + self.weights[0]
-        if summation > 0: # Belongs to W1
-          activation = 1
-        else: # Belongs to W2
-          activation = 0            
-        return activation
-
-    def train(self, training_inputs, labels):
-        for i in range(self.threshold):
-          print("Iteration {} ==========".format(i))
-          for inputs, label in zip(training_inputs, labels):
-            prediction = self.predict(inputs) # output of unit activation function
-            # print(inputs, label, prediction)
-            ## Reward punish -- ?
-            if label == 1 and prediction == 0: # class1 misclassified.
-              # Wi = Wi + n*d*input -> d = 1 or -1.
-              self.weights[1:] += self.learning_rate * inputs * 1
-              self.weights[0] += self.learning_rate # changing the bias
-
-            elif label == 2 and prediction == 1: # class2 misclassified
-              self.weights[1:] += self.learning_rate * inputs * -1
-              self.weights[0] += self.learning_rate * -1
-            else:
-              # print("Converging --")
-              pass # do nothing
-
-            ## Basic perceptron
-            # self.weights[1:] += self.learning_rate * (label - prediction) * inputs
-            # self.weights[0] += self.learning_rate * (label - prediction)
-
-class Object:
-    def __init__(self, class_name):
-        self.class_name = class_name
-        self.features = []
-        self.mean = []
-        self.sd = []
-        self.transpose = []
-        self.covariance = []
-        self.determinent = 1.0
-        self.inv_covar = []
-
-    def get_mean(self, feature_no):
-        sz = len(self.features)
-        temp = np.array([i[feature_no] for i in self.features]).astype(float)
-
-        return np.mean(temp)
-
-    def get_standard_deviation(self, feature_no):
-        sz = len(self.features)
-        temp = np.array([i[feature_no] for i in self.features]).astype(float)
-
-        return np.std(temp)
-
-    def calc_mean(self):
-        global Features
-        for i in range(Features):
-            mu = self.get_mean(i)
-            self.mean.append(mu)
-
-    def calc_standard_deviation(self):
-        global Features
-        for i in range(Features):
-            sigma = self.get_standard_deviation(i)
-            self.sd.append(sigma)
-
-    def covariance_mat(self):
-        pass
-    
-    def print_features(self):
-        print(len(self.features))
-        print(self.features)
-        print("----------------------")
-
-
 def read_dataset():
-    global Features, Classes, TrainingSize, Object_Dictionary
+    global Features, Classes, TrainingSize, dataset, input_matrix, labels
 
     f = open("./train.txt", "r")
     lines = f.readlines()
@@ -108,21 +21,21 @@ def read_dataset():
 
     Features, Classes, TrainingSize = map(int, lines[0].split())
     for i in range(TrainingSize):
-        data = lines[i + 1].split()
-        # print(data)
-        class_name = data[Features] # last element of data array
-        labels.append(int(class_name))
-        if class_name not in Object_Dictionary: # saving features for each distinct classes
-            Object_Dictionary[class_name] = Object(class_name)
+      data = lines[i + 1].split()
+      # print(data)
+      class_name = data[Features] # last element of data array
+      labels.append(int(class_name))
+      input_matrix.append(np.array(data[: Features]).astype(float))
 
-        Object_Dictionary[class_name].features.append(data[: Features])
-        input_matrix.append(np.array(data[: Features]).astype(float))
-
-    # print(Object_Dictionary)
+      temp = []
+      for j in range(Features):
+        temp.append(float(data[j]))
+      temp.append(int(data[Features]))
+      dataset.append(temp)
 
 
 def test_accuracy(perceptron):
-    global Features, Object_Dictionary, TrainingSize, correct
+    global Features, TrainingSize, correct
 
     f = open("./test.txt", "r")
     lines = f.readlines()
@@ -142,30 +55,60 @@ def test_accuracy(perceptron):
         #         test_vector.append(float(t))
 
         class_name = int(temp[Features])
-        # print("Class: {} [Sample - {}] -------\n".format(class_name, sample_count))
         inputs = np.array(temp[: Features]).astype(float)
         output = perceptron.predict(inputs)
-        if output == class_name or (output == 0 and class_name == 2):
+        
+        if output == class_name:
           correct += 1
         else:
           #incorrect
-          print("[Sample - {}] {} {} {}\n".format(sample_count, inputs, class_name, output))
+          # print("[Sample - {}] {} {} {}\n".format(sample_count, inputs, class_name, output))
+          pass
     
     acc = (correct / float(TrainingSize)) * 100.0
     print("accuracy: {} / {} = {}%".format(correct,TrainingSize,acc))
     # wr.close()
 
 
+def test(w):
+    global Features, dataset
+    count_accurate = 0
+    sample_count = 0
+    for data in dataset:
+        sample_count += 1
+        x = np.array(data)
+        class_name = x[Features]
+        x[Features] = 1
+        x = np.array(x)
+        x = x.reshape(Features+1,1)
+        dot_product = np.dot(w,x)[0]
+        predicted = -1
+        if dot_product >= 0:
+            predicted = 1
+        else:
+            predicted = 2
+
+        if predicted==class_name:
+            count_accurate += 1
+        else:
+          print("[Sample - {}] {} {} {}\n".format(sample_count, x, class_name, predicted))
+
+    print("Accuracy :",float((count_accurate/len(dataset))*100))
+    
+    return float(count_accurate/len(dataset))
+
+
 if __name__ == "__main__":
     read_dataset()
+    # train_basic_peceptron()
     # perceptron = Perceptron(4, threshold=10, learning_rate=1)
-    perceptron = Perceptron(Features)
-    perceptron.train(input_matrix, labels)
-    print("Weight Vectors")
+    perceptron = Perceptron(TrainingSize,Features)
+    perceptron.train(input_matrix, labels, dataset)
     perceptron.print_weight_vec()
 
     # inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
     # output = perceptron.predict(inputs)
     # print(output) # expected class = 1
     
-    test_accuracy(perceptron)
+    # test_accuracy(perceptron)
+    test(perceptron.getWeight())
