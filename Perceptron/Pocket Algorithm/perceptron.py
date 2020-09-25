@@ -8,13 +8,17 @@ class Perceptron(object):
         self.learning_rate = float(learning_rate)
         self.bias = 0
         self.weights = np.random.uniform(-1,1,(features + 1))
+        self.pocket = np.copy(self.weights)
         # self.weights = np.zeros(features + 1)
 
     def print_weight_vec(self):
         print(self.weights)
 
+    def print_pocket_vec(self):
+        print(self.pocket)
+
     def predict(self, inputs):
-        summation = np.dot(inputs, self.weights[1:]) + self.weights[0]
+        summation = np.dot(inputs, self.pocket[1:]) + self.pocket[0]
         if summation > 0: # Belongs to W1
           activation = 1
         else: # Belongs to W2
@@ -25,6 +29,7 @@ class Perceptron(object):
         for i in range(self.threshold):
           print("Iteration {} ==========".format(i))
           misclassified = 0
+          hs = len(training_inputs)
           for inputs, label in zip(training_inputs, labels):
             prediction = self.predict(inputs) # output of unit activation function
             # print(inputs, label, prediction)
@@ -43,7 +48,12 @@ class Perceptron(object):
               # print("Converging --")
               pass # do nothing
           
-          print(misclassified)
-            ## Basic perceptron
-            # self.weights[1:] += self.learning_rate * (label - prediction) * inputs
-            # self.weights[0] += self.learning_rate * (label - prediction)
+          print("{} {}".format(misclassified,hs))
+          if (misclassified < hs) :
+            print("Better classify--")
+            hs = misclassified
+            self.pocket = np.copy(self.weights)
+
+          if misclassified == 0:
+            print("\n ---- CONVERGED ---- \n\n")
+            break

@@ -79,8 +79,8 @@ if __name__ == "__main__":
     # print("Weight Vectors")
     perceptron.print_weight_vec()
 
-    inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
-    output = perceptron.predict(inputs)
+    # inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
+    # output = perceptron.predict(inputs)
     # print(output) # expected class = 1
     
-    # test_accuracy(perceptron)
+    test_accuracy(perceptron)
