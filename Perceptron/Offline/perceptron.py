@@ -93,7 +93,7 @@ def train_basic_perceptron():
   global weight_vec, dataset, Threshold, TrainingSize, Learning_Rate, Features
   
   for i in range(Threshold):
-    print("Iter {} => {}".format(i))
+    print("Iter {} =>".format(i))
     misclassified = []
     delX = []
     for j in range(TrainingSize):
@@ -189,10 +189,23 @@ def train_reward_punish():
 
 if __name__ == "__main__":
   
-  ## read_training_dataset()
+  print("Enter Threshold:")
+  Threshold = int(input()) 
+  print("Select Algorithm:\n1: Basic Perceptron\n2: Reward and Punishment\n3: Pocket Algorithm")
+  Algo = int(input()) 
+  
+  if Algo == 1:
+    train_basic_perceptron()
+  elif Algo == 2:
+    train_reward_punish()
+  elif Algo == 3:
+    train_pocket()
+  else:
+    print("Invalid Input")
+
   # train_basic_perceptron()
   # train_pocket()
-  train_reward_punish()
+  # train_reward_punish()
 
   print('Final Weight : ', weight_vec)
   test(weight_vec, True)
