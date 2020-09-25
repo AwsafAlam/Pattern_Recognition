@@ -60,12 +60,12 @@ def test(weight_vec, report = False):
         data.append(float(temp[i]))
     data.append(int(temp[Features]))
 
-    x = np.array(data)
-    x[Features] = 1
-    x = np.array(x)
-    x = x.reshape(Features+1,1)
+    input_vec = np.array(data)
+    input_vec[Features] = 1
+    input_vec = np.array(input_vec)
+    input_vec = input_vec.reshape(Features+1,1)
     # dot_prod = np.dot(weight_vec[1:],inputs) + weight_vec[0]
-    dot_prod = np.dot(weight_vec, x)[0]
+    dot_prod = np.dot(weight_vec, input_vec)[0]
     predicted = -1
     if dot_prod > 0:
         predicted = 1
@@ -96,16 +96,16 @@ def train_basic_perceptron():
     Y = []
     arr_dx = []
     for j in range(TrainingSize):
-        x = np.array(dataset[j])
-        class_name = x[Features]
-        x[Features] = 1
-        x = x.reshape(Features+1,1)
-        dot_product = np.dot(weight_vec,x)[0]
+        input_vec = np.array(dataset[j])
+        class_name = input_vec[Features]
+        input_vec[Features] = 1
+        input_vec = input_vec.reshape(Features+1,1)
+        dot_product = np.dot(weight_vec,input_vec)[0]
         if (class_name == 2 and dot_product > 0):
-            Y.append(x)
+            Y.append(input_vec)
             arr_dx.append(1)
         elif (class_name ==1 and dot_product < 0):
-            Y.append(x)
+            Y.append(input_vec)
             arr_dx.append(-1)
         else:
             pass
@@ -121,7 +121,6 @@ def train_basic_perceptron():
     if len(Y) == 0:
         break        
   
-
 def activation_func(inputs, weights):
   summation = np.dot(inputs, weights[1:]) + weights[0]
   if summation > 0: # Belongs to W1
@@ -140,13 +139,15 @@ def train_pocket():
   w = np.copy(weight_vec)
   misclassified = test(w)
   print(misclassified)
-
+  if misclassified == 0:
+    return
   # count = TestSize
   count = misclassified
   for iter in range(Threshold):
     print("Pocket Iteration {} ==========".format(iter))
     train_basic_perceptron() # W is updated according to basic perceptron algo
     misclassified = test(weight_vec)
+    print("Misclassified {}".format(misclassified))
     
     if misclassified < count:
       count = misclassified
@@ -158,11 +159,42 @@ def train_pocket():
   weight_vec = np.copy(w)
   
 
+def train_reward_punish():
+  """
+  Reward Punish Algorithm
+  """
+  global weight_vec, dataset, Threshold, TrainingSize, Learning_Rate, Features
+  
+  for i in range(Threshold):
+    print("Iteration {} ==========".format(i))
+    misclassified = 0
+    for j in range(TrainingSize):
+      input_vec = np.array(dataset[j])
+      class_name = input_vec[Features]
+      input_vec[Features] = 1
+      input_vec = input_vec.reshape((Features + 1) ,1)
+      dot_product = np.dot(weight_vec,input_vec)[0]
+      if class_name == 1 and dot_product <= 0: # class1 misclassified.
+        # Wi = Wi + n*d*input -> d = 1
+        misclassified += 1
+        weight_vec = weight_vec + Learning_Rate * input_vec
+
+      elif class_name == 2 and dot_product > 0: # class2 misclassified
+        misclassified += 1
+        weight_vec = weight_vec - Learning_Rate * input_vec
+      else:
+          pass
+    print(misclassified)
+    if misclassified == 0:
+        break        
+  
+
 if __name__ == "__main__":
   
   ## read_training_dataset()
   # train_basic_perceptron()
-  train_pocket()
+  # train_pocket()
+  train_reward_punish()
 
   print('Final Weight : ', weight_vec)
   test(weight_vec, True)
