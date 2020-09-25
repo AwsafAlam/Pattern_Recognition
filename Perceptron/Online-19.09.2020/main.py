@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import math
 from perceptron import Perceptron
 
@@ -9,7 +10,7 @@ Object_Dictionary = {}
 correct = 0
 
 weight_vec = []
-
+dataset = []
 input_matrix = []
 labels = []
 
@@ -22,17 +23,17 @@ def read_dataset():
 
     Features, Classes, TrainingSize = map(int, lines[0].split())
     for i in range(TrainingSize):
-        data = lines[i + 1].split()
-        # print(data)
-        class_name = data[Features] # last element of data array
-        labels.append(int(class_name))
-        # if class_name not in Object_Dictionary: # saving features for each distinct classes
-        #     Object_Dictionary[class_name] = Object(class_name)
+      data = lines[i + 1].split()
+      # print(data)
+      class_name = data[Features] # last element of data array
+      labels.append(int(class_name))
+      input_matrix.append(np.array(data[: Features]).astype(float))
 
-        # Object_Dictionary[class_name].features.append(data[: Features])
-        input_matrix.append(np.array(data[: Features]).astype(float))
-
-    # print(Object_Dictionary)
+      temp = []
+      for j in range(Features):
+        temp.append(float(data[j]))
+      temp.append(int(data[Features]))
+      dataset.append(temp)
 
 
 def test_accuracy(perceptron):
@@ -70,17 +71,58 @@ def test_accuracy(perceptron):
     print("accuracy: {} / {} = {}%".format(correct,TrainingSize,acc))
     # wr.close()
 
+def train_basic_peceptron():
+  """
+  docstring
+  """
+  np.random.seed(41)
+  w = np.random.uniform(-10,10,Features+1)
+
+  learning_rate = 0.025
+  t = 0
+
+  for i in range(1000): # fixed threshold for iteration
+    Y = []
+    arr_dx = []
+    for j in range(TrainingSize):
+        x = np.array(dataset[j])
+        group = x[Features]
+        x[Features] = 1
+        x = x.reshape(Features+1,1)
+        dot_product = np.dot(w,x)[0]
+        if(group == 2 and dot_product>0):
+            Y.append(x)
+            arr_dx.append(1)
+        elif(group ==1 and dot_product<0):
+            Y.append(x)
+            arr_dx.append(-1)
+        else:
+            pass
+    
+    sum = np.zeros(Features+1)
+    
+    for j in range(len(Y)):
+        sum += arr_dx[j]*Y[j].transpose()[0]
+    
+    
+    w = w - learning_rate*sum
+    print("Iter {} => {}".format(i,"---"))
+    if len(Y) == 0:
+        break
+  print('Final Weight : ', w)
+
+
 
 if __name__ == "__main__":
     read_dataset()
+    train_basic_peceptron()
     # perceptron = Perceptron(4, threshold=10, learning_rate=1)
-    perceptron = Perceptron(Features)
-    perceptron.train(input_matrix, labels)
-    print("Weight Vectors")
-    perceptron.print_weight_vec()
+    # perceptron = Perceptron(TrainingSize,Features)
+    # perceptron.train(input_matrix, labels, dataset)
+    # perceptron.print_weight_vec()
 
     # inputs = np.array([2.09894733, 3.927346913, 5.126590034, 7.219977249]).astype(float)
     # output = perceptron.predict(inputs)
     # print(output) # expected class = 1
     
-    test_accuracy(perceptron)
+    # test_accuracy(perceptron)
