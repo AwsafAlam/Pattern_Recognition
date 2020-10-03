@@ -62,7 +62,7 @@ def test(weight_vec, report = False):
 
     input_vec = np.array(data)
     input_vec[Features] = 1
-    input_vec = np.array(input_vec)
+    # input_vec = np.array(input_vec)
     input_vec = input_vec.reshape((Features+1),1)
     # dot_prod = np.dot(weight_vec[1:],inputs) + weight_vec[0]
     dot_prod = np.dot(weight_vec, input_vec)[0]
