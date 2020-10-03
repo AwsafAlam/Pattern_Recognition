@@ -14,7 +14,7 @@ labels = []
 weight_vec = []
 
 # Reading training data
-f = open("train.txt", "r")
+f = open("train_nonsep.txt", "r")
 lines = f.readlines()
 f.close()
 Features, Classes, TrainingSize = map(int, lines[0].split())
@@ -39,7 +39,7 @@ for i in range(TrainingSize):
 def test(weight_vec, report = False):
   global Features, TrainingSize, TestSize, Classes
 
-  f = open("test.txt", "r")
+  f = open("test_nonsep.txt", "r")
   lines = f.readlines()
   f.close()
 
