@@ -1,5 +1,4 @@
 import numpy as np
-import pandas as pd
 
 np.random.seed(21) # fixed seed for random distribution of weight vector
 
