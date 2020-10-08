@@ -155,13 +155,16 @@ if __name__ == "__main__":
 
   print("Network structure :")
   print(structure)
-  # 4 features, and 5 neurons
-  layer1 = Layer_dense(Features, 5)
+  hidden_layers = []
+  # layer = 0
+  for i in range(Layers):  # input layer is layer0
+    layer = Layer_dense(structure[i], structure[i+1])
+    hidden_layers.append(layer)
+  
+  for i in range(len(hidden_layers)):
+    if i == 0:
+      hidden_layers[i].forward(input_matrix)
+    else:
+      hidden_layers[i].forward(hidden_layers[i-1].output)
 
-  # 5 putputs of l1, and 2 neurons
-  layer2 = Layer_dense(5, 2)
-
-  layer1.forward(input_matrix)
-  # print(layer1.output)
-  layer2.forward(layer1.output)
-  # print(layer2.output)
+  print(hidden_layers[Layers-1].output)
