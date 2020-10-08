@@ -24,10 +24,10 @@ import numpy as np
 np.random.seed(21) # fixed seed for random distribution of weight vector
 
 Threshold = 100
-Classes, Features = 0, 0
+Classes, Features, Layers = 0, 0, 0
 TrainingSize, TestSize = 0, 0
 Learning_Rate = 0.01
-
+structure = []
 dataset = []
 input_matrix = []
 labels = []
@@ -66,6 +66,21 @@ for i in range(TrainingSize):
 
 # Initializing no. of classes
 Classes = len(class_labels)
+
+def read_network_structure():
+  """
+  docstring
+  """
+  global Layers, structure, Features
+  f = open("structureNN.txt", "r")
+  lines = f.readlines()
+  f.close()
+  Layers = int(lines[0])
+  structure.append(Features)
+  for i in range(Layers):
+    structure.append(int(lines[i+1].split()[1]))
+
+  return structure
 
 def test(weight_vec, report = False):
   global Features, TrainingSize, TestSize, Classes
@@ -134,13 +149,19 @@ class Layer_dense:
     """
     self.output = np.dot(inputs, self.weights) + self.biases
 
-# 4 features, and 5 neurons
-layer1 = Layer_dense(Features, 5)
 
-# 5 putputs of l1, and 2 neurons
-layer2 = Layer_dense(5, 2)
+if __name__ == "__main__":
+  read_network_structure()
 
-layer1.forward(input_matrix)
-print(layer1.output)
-layer2.forward(layer1.output)
-print(layer2.output)
+  print("Network structure :")
+  print(structure)
+  # 4 features, and 5 neurons
+  layer1 = Layer_dense(Features, 5)
+
+  # 5 putputs of l1, and 2 neurons
+  layer2 = Layer_dense(5, 2)
+
+  layer1.forward(input_matrix)
+  # print(layer1.output)
+  layer2.forward(layer1.output)
+  # print(layer2.output)
