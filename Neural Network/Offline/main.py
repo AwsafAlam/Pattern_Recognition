@@ -35,9 +35,9 @@ class_labels = []
 weight_vec = []
 
 # ## We take in a batch of inputs
-X = [[1,2, 3, 2.5],
-    [2.0, 5.0, -1.0, 2.0],
-    [-1.5,2.7, 3.3, -0.8]]
+# X = [[1,2, 3, 2.5],
+#     [2.0, 5.0, -1.0, 2.0],
+#     [-1.5,2.7, 3.3, -0.8]]
 # Reading training data
 f = open("trainNN.txt", "r")
 lines = f.readlines()
@@ -135,12 +135,12 @@ class Layer_dense:
     self.output = np.dot(inputs, self.weights) + self.biases
 
 # 4 features, and 5 neurons
-layer1 = Layer_dense(4, 5)
+layer1 = Layer_dense(Features, 5)
 
 # 5 putputs of l1, and 2 neurons
 layer2 = Layer_dense(5, 2)
 
-layer1.forward(X)
+layer1.forward(input_matrix)
 print(layer1.output)
 layer2.forward(layer1.output)
 print(layer2.output)
