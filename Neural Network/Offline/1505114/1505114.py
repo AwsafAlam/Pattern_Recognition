@@ -175,7 +175,7 @@ def back_propagation():
       hidden_layers[i].errors = np.dot(hidden_layers[i + 1].delta, hidden_layers[i + 1].weights.T)
       hidden_layers[i].backward(hidden_layers[i].output)
     else:
-      hidden_layers[i].errors = (0.5)*(np.square((target_output - hidden_layers[i].output)))
+      hidden_layers[i].errors = (target_output - hidden_layers[i].output)
       hidden_layers[i].backward(hidden_layers[i].output)
 
     hidden_layers[i].weights -= Learning_Rate * np.dot(hidden_layers[i-1].output.T , hidden_layers[i].delta)
