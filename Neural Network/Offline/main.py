@@ -23,7 +23,7 @@ import numpy as np
 
 np.random.seed(21) # fixed seed for random distribution of weight vector
 
-MAXEPOCH = 1
+MAXEPOCH = 1000
 Classes, Features, Layers = 0, 0, 0
 TrainingSize, TestSize = 0, 0
 Learning_Rate = 0.01
@@ -89,6 +89,8 @@ class Layer_dense:
     """
     # Gausian distribution bounded around 0
     self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
+    # self.weights = np.random.uniform(-1,1,n_inputs, n_neurons )
+    
     self.biases = np.zeros((1, n_neurons))
     self.errors = np.zeros((1, n_neurons))
     self.delta = np.zeros((1, n_neurons))
@@ -156,54 +158,6 @@ def read_network_structure():
 
   return structure
 
-def test(weight_vec, report = False):
-  global Features, TrainingSize, TestSize, Classes
-  # TODO: needs changing
-  f = open("testNN.txt", "r")
-  lines = f.readlines()
-  f.close()
-
-  # wr = open("Report.txt", "w")
-  test_dataset = []
-  sample_count, correct = 0 , 0
-
-  for line in lines:
-    sample_count += 1
-    temp = line.rstrip()
-    temp = temp.split()
-    class_name = int(temp[Features])
-    inputs = np.array(temp[: Features]).astype(float)
-      
-    data = []
-    for i in range(Features):
-        data.append(float(temp[i]))
-    data.append(int(temp[Features]))
-
-    input_vec = np.array(data)
-    input_vec[Features] = 1
-    # input_vec = np.array(input_vec)
-    input_vec = input_vec.reshape((Features+1),1)
-    # dot_prod = np.dot(weight_vec[1:],inputs) + weight_vec[0]
-    dot_prod = np.dot(weight_vec, input_vec)[0]
-    if dot_prod > 0:
-        predicted = 1
-    else:
-        predicted = 2
-
-    if predicted == class_name:
-        correct += 1
-    else:
-      if report:
-        print("[Sample-{}] {} - {} - {}\n".format(sample_count, inputs, class_name, predicted))
-      pass
-
-  TestSize = sample_count
-  print("Accuracy :",float((correct/float(sample_count))*100))
-  
-  # returns no. of misclassified
-  return (sample_count - correct)
-
-
 def back_propagation():
   """
   Back Propagation
@@ -211,10 +165,10 @@ def back_propagation():
   global hidden_layers, TrainingSize, target_output
   i = len(hidden_layers) - 1
   for i in reversed(range(len(hidden_layers))):
-    print(hidden_layers[i].output)
+    # print(hidden_layers[i].output)
     errors = []
     if i != len(hidden_layers) - 1:
-      hidden_layers[i].errors = np.dot(hidden_layers[i + 1].delta, hidden_layers[i + 1].weights)
+      hidden_layers[i].errors = np.dot(hidden_layers[i + 1].delta, hidden_layers[i + 1].weights.T)
       hidden_layers[i].backward(hidden_layers[i].output)
     else:
       hidden_layers[i].errors = (target_output - hidden_layers[i].output)
@@ -222,6 +176,20 @@ def back_propagation():
 
     hidden_layers[i].weights -= Learning_Rate * np.dot(hidden_layers[i-1].output.T , hidden_layers[i].delta)
 
+def forward_pass(X):
+  """
+  Forward pass throught Network
+  """
+  global hidden_layers
+  # Forward Propagation
+  for i in range(len(hidden_layers)):
+    if i == 0:
+      hidden_layers[i].forward(X, 0)
+      
+    else:
+      hidden_layers[i].forward(hidden_layers[i-1].output, 0)
+
+  return hidden_layers[ len(hidden_layers) - 1].output
 
 def train():
   """
@@ -238,7 +206,7 @@ def train():
       else:
         hidden_layers[i].forward(hidden_layers[i-1].output, 0)
         
-    print(hidden_layers[Layers].output)
+    # print(hidden_layers[Layers].output)
     # Calculate Mean Squared Error
     output_prediction = hidden_layers[len(hidden_layers)-1].output
     # print(output_prediction - target_output)
@@ -253,7 +221,59 @@ def train():
       print ("Cost after iteration {}: {}".format(epoch, cost)) 
 
 
+def test(report = False):
+  global Features, TrainingSize, TestSize, Classes
+  # TODO: needs changing
+  f = open("testNN.txt", "r")
+  lines = f.readlines()
+  f.close()
 
+  # wr = open("Report.txt", "w")
+  sample_count, correct = 0 , 0
+
+  for line in lines:
+    sample_count += 1
+    temp = line.rstrip()
+    temp = temp.split()
+    class_name = int(temp[Features])
+    inputs = np.array(temp[: Features]).astype(float)
+      
+    data = []
+    for i in range(Features):
+        data.append(float(temp[i]))
+    data.append(int(temp[Features]))
+
+    input_vec = np.array(data)
+    input_vec[Features] = 1
+
+    # Run Forward pass
+    output = forward_pass(inputs)
+    print(output)
+    predicted = np.argmax(output, axis=1) + 1
+    # max_value = max(output)
+    # predicted = output.index(max_value)
+    print(predicted)
+    # # input_vec = np.array(input_vec)
+    # input_vec = input_vec.reshape((Features+1),1)
+    # # dot_prod = np.dot(weight_vec[1:],inputs) + weight_vec[0]
+    # dot_prod = np.dot(weight_vec, input_vec)[0]
+    # if dot_prod > 0:
+    #     predicted = 1
+    # else:
+    #     predicted = 2
+
+    if predicted == class_name:
+        correct += 1
+    else:
+      if report:
+        print("[Sample-{}] {} - {} - {}\n".format(sample_count, inputs, class_name, predicted))
+      pass
+
+  TestSize = sample_count
+  print("Accuracy :",float((correct/float(sample_count))*100))
+  
+  # returns no. of misclassified
+  return (sample_count - correct)
 
 
 
@@ -263,6 +283,7 @@ if __name__ == "__main__":
   print("Network structure :")
   print(structure)
   train()
+  test()
 
   # TODO: Implement
   '''
