@@ -90,6 +90,8 @@ class Layer_dense:
     # Gausian distribution bounded around 0
     self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
     self.biases = np.zeros((1, n_neurons))
+    self.errors = np.zeros((1, n_neurons))
+    self.delta = np.zeros((1, n_neurons))
 
   
   def forward(self, inputs, func):
@@ -101,22 +103,35 @@ class Layer_dense:
     self.output = self.activation_func(self.output, func)
     self.output = np.array(self.output)
 
+  def backward(self, outputs):
+    self.delta = self.errors * self.differential(outputs,0)
+
   def activation_func(self, X, func = 0):
     if func == 0:
-        return 1.0 / (1.0 + np.exp(-X)) # sigmoid
+      return 1.0 / (1.0 + np.exp(-X)) # sigmoid
     elif func == 1:
-        return np.tanh(X) #tanh
+      return np.tanh(X) #tanh
     elif func == 2:
-        return np.maximum(0, X) #ReLu
+      return np.maximum(0, X) #ReLu
+    elif func == 3: #softmax
+      return np.exp(X) / np.sum(np.exp(X), axis=1, keepdims=True)
+
 
   def differential(self, X, func = 0):
     if func == 0:
-        return X*(1-X)
+        return (X * ( 1 - X ))
     elif func == 1:
-        return (1 - (X ** 2))
+        return (1 - np.square(X))
     elif func == 2:
         return (1.0)*(X>0)+(0.1)*(X<0)
-    
+    elif func == 3: #softmax
+      # Clipping value
+      minval = 0.000000000001
+      # Number of samples
+      m = X.shape[0]
+      # Loss formula, note that np.sum sums up the entire matrix and therefore does the job of two sums from the formula
+      loss = -1/m * np.sum(X * np.log(X.clip(min=minval)))
+      return loss
 
 def read_network_structure():
   """
@@ -188,67 +203,25 @@ def test(weight_vec, report = False):
   # returns no. of misclassified
   return (sample_count - correct)
 
-def sigmoid(X):
+
+def back_propagation():
   """
-  Sigmoid Function
-  """
-  val = 1/(1+np.exp(-X))
-  return val
-
-def sigmoid_der(X):
-  """
-  Derivstive of Sigmoid Function
-  """
-  return sigmoid(X) *(1-sigmoid(X))
-
-def ReLu(inputs):
-  return np.maximum(0, inputs)
-
-def softmax(z):
-    #Calculate exponent term first
-    exp_scores = np.exp(z)
-    return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
-
-def softmax_loss(y,y_hat):
-    # Clipping value
-    minval = 0.000000000001
-    # Number of samples
-    m = y.shape[0]
-    # Loss formula, note that np.sum sums up the entire matrix and therefore does the job of two sums from the formula
-    loss = -1/m * np.sum(y * np.log(y_hat.clip(min=minval)))
-    return loss
-
-def loss_derivative(y,y_hat):
-    return (y_hat-y)
-
-def tanh(X):
-  # TODO: Fix the output
-  return len(X)
-
-def tanh_derivative(x):
-    return (1 - np.power(x, 2))
-
-
-def back_propagation(cost):
-  """
-  docstring
+  Back Propagation
   """
   global hidden_layers, TrainingSize, target_output
-  
-  for layer in reversed(hidden_layers):
-    # print(layer.output)
-    output_op = layer.output
+  i = len(hidden_layers) - 1
+  for i in reversed(range(len(hidden_layers))):
+    print(hidden_layers[i].output)
+    errors = []
+    if i != len(hidden_layers) - 1:
+      hidden_layers[i].errors = np.dot(hidden_layers[i + 1].delta, hidden_layers[i + 1].weights)
+      hidden_layers[i].backward(hidden_layers[i].output)
+    else:
+      hidden_layers[i].errors = (target_output - hidden_layers[i].output)
+      hidden_layers[i].backward(hidden_layers[i].output)
 
-    # Derivatives
-    # derror_douto = output_op - target_output
-    # douto_dino = sigmoid_der(layer.output)
-    # dino_dwo = output_op
-    # derror_dwo = np.dot(dino_dwo.T,derror_douto*douto_dino)
+    hidden_layers[i].weights -= Learning_Rate * np.dot(hidden_layers[i-1].output.T , hidden_layers[i].delta)
 
-    # Update Weights
-    # hidden_layers[i].weights -= Learning_Rate * derror_wh
-
-  pass
 
 def train():
   """
@@ -256,18 +229,14 @@ def train():
   """
   global input_matrix, structure, hidden_layers, class_labels
   for epoch in range(MAXEPOCH):
-    # layer = Layer_dense(structure[Layers], len(class_labels))
-    # hidden_layers.append(layer)
-    delta = []
-    a = []
-    dw = []
+    
     # Forward Propagation
     for i in range(len(hidden_layers)):
       if i == 0:
         hidden_layers[i].forward(input_matrix, 0)
         
       else:
-        hidden_layers[i].forward(hidden_layers[i-1].output, i%2)
+        hidden_layers[i].forward(hidden_layers[i-1].output, 0)
         
     print(hidden_layers[Layers].output)
     # Calculate Mean Squared Error
@@ -277,14 +246,11 @@ def train():
     cost = error_out.sum()
     print(error_out.sum())
 
-    # Backpropagation. Inputs: "parameters, cache, X, Y". Outputs: "grads". 
-    # W1, W2, b1, b2 = back_propagation(W1, b1, W2, b2, cache) 
-    ## Calculate Back Propagation
-    back_propagation(cost)
+    back_propagation()
           
     # Print the cost every 100 iterations 
     if epoch % 100 == 0: 
-        print ("Cost after iteration % i: % f" % (epoch, cost)) 
+      print ("Cost after iteration {}: {}".format(epoch, cost)) 
 
 
 
