@@ -80,7 +80,7 @@ print(labels.shape)
 for i in range(len(labels)):
   temp = np.zeros(Classes)
   temp = list(temp)
-  temp[int(labels[i])-1] = 1.0
+  temp[int(labels[i]) - 1] = 1.0
   target_output.append(temp)
 
 target_output = np.array(target_output)
