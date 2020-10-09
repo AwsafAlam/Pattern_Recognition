@@ -23,7 +23,7 @@ import numpy as np
 
 np.random.seed(21) # fixed seed for random distribution of weight vector
 
-Threshold = 100
+MAXEPOCH = 1
 Classes, Features, Layers = 0, 0, 0
 TrainingSize, TestSize = 0, 0
 Learning_Rate = 0.01
@@ -33,6 +33,7 @@ input_matrix = []
 labels = []
 class_labels = []
 weight_vec = []
+hidden_layers = []
 
 # ## We take in a batch of inputs
 # X = [[1,2, 3, 2.5],
@@ -66,6 +67,30 @@ for i in range(TrainingSize):
 
 # Initializing no. of classes
 Classes = len(class_labels)
+labels = np.array(labels)
+labels = labels.reshape(TrainingSize,1)
+print(labels.shape)
+# ==============================================
+
+class Layer_dense:
+  """
+  docstring
+  """
+  def __init__(self, n_inputs, n_neurons):
+    """
+    docstring
+    """
+    # Gausian distribution bounded around 0
+    self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
+    self.biases = np.zeros((1, n_neurons))
+
+  
+  def forward(self, inputs):
+    """
+    docstring
+    """
+    self.output = np.dot(inputs, self.weights) + self.biases
+
 
 def read_network_structure():
   """
@@ -129,25 +154,75 @@ def test(weight_vec, report = False):
   # returns no. of misclassified
   return (sample_count - correct)
 
+def sigmoid(X):
+  """
+  Sigmoid Function
+  """
+  val = 1/(1+np.exp(-X))
+  return val
 
-class Layer_dense:
+def sigmoid_der(X):
+  """
+  Derivstive of Sigmoid Function
+  """
+  return sigmoid(X) *(1-sigmoid(X))
+
+def ReLu(inputs):
+  return np.maximum(0, inputs)
+
+
+def back_propagation():
   """
   docstring
   """
-  def __init__(self, n_inputs, n_neurons):
-    """
-    docstring
-    """
-    # Gausian distribution bounded around 0
-    self.weights = 0.1 * np.random.randn(n_inputs, n_neurons)
-    self.biases = np.zeros((1, n_neurons))
+  global hidden_layers, TrainingSize
 
-  
-  def forward(self, inputs):
-    """
-    docstring
-    """
-    self.output = np.dot(inputs, self.weights) + self.biases
+  for layer in reversed(hidden_layers):
+    # Calculate Mean Squared Error
+    output_op = layer.output
+    error_out = (1/2)*(np.power((output_op - labels),2))
+    print(error_out.sum())
+
+    # Derivatives
+    derror_douto = output_op - labels
+    douto_dino = sigmoid_der(hidden_layers[i].output)
+    dino_dwo = output_op
+    derror_dwo = np.dot(dino_dwo.T,derror_douto*douto_dino)
+
+    # Update Weights
+    hidden_layers[i].weights -= Learning_Rate * derror_wh
+
+  pass
+
+
+def train():
+  """
+  Training the NN
+  """
+  global input_matrix, structure, hidden_layers
+  for epoch in range(MAXEPOCH):
+    input = input_matrix
+    # layer = 0
+    for i in range(Layers):  # input layer is layer0
+      layer = Layer_dense(structure[i], structure[i+1])
+      hidden_layers.append(layer)
+    
+    for i in range(len(hidden_layers)):
+      if i == 0:
+        hidden_layers[i].forward(input_matrix)
+        output_op =  sigmoid(hidden_layers[i].output)
+        hidden_layers[i].output = output_op
+
+      else:
+        hidden_layers[i].forward(hidden_layers[i-1].output)
+        hidden_layers[i].output =  sigmoid(hidden_layers[i].output)
+
+    print(hidden_layers[Layers-1].output)
+
+    ## Calculate Back Propagation
+
+
+
 
 
 if __name__ == "__main__":
@@ -155,16 +230,14 @@ if __name__ == "__main__":
 
   print("Network structure :")
   print(structure)
-  hidden_layers = []
-  # layer = 0
-  for i in range(Layers):  # input layer is layer0
-    layer = Layer_dense(structure[i], structure[i+1])
-    hidden_layers.append(layer)
-  
-  for i in range(len(hidden_layers)):
-    if i == 0:
-      hidden_layers[i].forward(input_matrix)
-    else:
-      hidden_layers[i].forward(hidden_layers[i-1].output)
+  train()
 
-  print(hidden_layers[Layers-1].output)
+  # TODO: Implement
+  '''
+  Try out some variations on
+  1. layers = neurons
+  2. Layer id = No. of neurons
+  3. ReLu, sigmoid, softmax etc. 
+  '''
+
+  
