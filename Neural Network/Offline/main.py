@@ -27,13 +27,11 @@ MAXEPOCH = 1
 Classes, Features, Layers = 0, 0, 0
 TrainingSize, TestSize = 0, 0
 Learning_Rate = 0.01
-structure = []
 dataset = []
 input_matrix = []
-labels = []
+labels, target_output = [], []
 class_labels = []
-weight_vec = []
-hidden_layers = []
+structure, weight_vec, hidden_layers = [], [], []
 
 # ## We take in a batch of inputs
 # X = [[1,2, 3, 2.5],
@@ -70,6 +68,15 @@ Classes = len(class_labels)
 labels = np.array(labels)
 labels = labels.reshape(TrainingSize,1)
 print(labels.shape)
+
+for i in range(len(labels)):
+  temp = np.zeros(Classes)
+  temp = list(temp)
+  temp[int(labels[i])-1] = 1.0
+  target_output.append(temp)
+
+target_output = np.array(target_output)
+# print(target_output)
 # ==============================================
 
 class Layer_dense:
@@ -85,25 +92,52 @@ class Layer_dense:
     self.biases = np.zeros((1, n_neurons))
 
   
-  def forward(self, inputs):
+  def forward(self, inputs, func):
     """
     docstring
     """
     self.output = np.dot(inputs, self.weights) + self.biases
+    self.output = np.array(self.output)
+    self.output = self.activation_func(self.output, func)
+    self.output = np.array(self.output)
 
+  def activation_func(self, X, func = 0):
+    if func == 0:
+        return 1.0 / (1.0 + np.exp(-X)) # sigmoid
+    elif func == 1:
+        return np.tanh(X) #tanh
+    elif func == 2:
+        return np.maximum(0, X) #ReLu
+
+  def differential(self, X, func = 0):
+    if func == 0:
+        return X*(1-X)
+    elif func == 1:
+        return (1 - (X ** 2))
+    elif func == 2:
+        return (1.0)*(X>0)+(0.1)*(X<0)
+    
 
 def read_network_structure():
   """
   docstring
   """
-  global Layers, structure, Features
+  global Layers, structure, Features, class_labels
   f = open("structureNN.txt", "r")
   lines = f.readlines()
   f.close()
   Layers = int(lines[0])
+  print("Constructing Neural Network with {} Hidden Layers".format(Layers))
   structure.append(Features)
   for i in range(Layers):
     structure.append(int(lines[i+1].split()[1]))
+
+  structure.append(len(class_labels))
+
+  # Creating the Network
+  for i in range(len(structure) - 1):  # input layer is layer0
+    layer = Layer_dense(structure[i], structure[i+1])
+    hidden_layers.append(layer)
 
   return structure
 
@@ -170,56 +204,88 @@ def sigmoid_der(X):
 def ReLu(inputs):
   return np.maximum(0, inputs)
 
+def softmax(z):
+    #Calculate exponent term first
+    exp_scores = np.exp(z)
+    return exp_scores / np.sum(exp_scores, axis=1, keepdims=True)
 
-def back_propagation():
+def softmax_loss(y,y_hat):
+    # Clipping value
+    minval = 0.000000000001
+    # Number of samples
+    m = y.shape[0]
+    # Loss formula, note that np.sum sums up the entire matrix and therefore does the job of two sums from the formula
+    loss = -1/m * np.sum(y * np.log(y_hat.clip(min=minval)))
+    return loss
+
+def loss_derivative(y,y_hat):
+    return (y_hat-y)
+
+def tanh(X):
+  # TODO: Fix the output
+  return len(X)
+
+def tanh_derivative(x):
+    return (1 - np.power(x, 2))
+
+
+def back_propagation(cost):
   """
   docstring
   """
-  global hidden_layers, TrainingSize
-
+  global hidden_layers, TrainingSize, target_output
+  
   for layer in reversed(hidden_layers):
-    # Calculate Mean Squared Error
+    # print(layer.output)
     output_op = layer.output
-    error_out = (1/2)*(np.power((output_op - labels),2))
-    print(error_out.sum())
 
     # Derivatives
-    derror_douto = output_op - labels
-    douto_dino = sigmoid_der(hidden_layers[i].output)
-    dino_dwo = output_op
-    derror_dwo = np.dot(dino_dwo.T,derror_douto*douto_dino)
+    # derror_douto = output_op - target_output
+    # douto_dino = sigmoid_der(layer.output)
+    # dino_dwo = output_op
+    # derror_dwo = np.dot(dino_dwo.T,derror_douto*douto_dino)
 
     # Update Weights
-    hidden_layers[i].weights -= Learning_Rate * derror_wh
+    # hidden_layers[i].weights -= Learning_Rate * derror_wh
 
   pass
-
 
 def train():
   """
   Training the NN
   """
-  global input_matrix, structure, hidden_layers
+  global input_matrix, structure, hidden_layers, class_labels
   for epoch in range(MAXEPOCH):
-    input = input_matrix
-    # layer = 0
-    for i in range(Layers):  # input layer is layer0
-      layer = Layer_dense(structure[i], structure[i+1])
-      hidden_layers.append(layer)
-    
+    # layer = Layer_dense(structure[Layers], len(class_labels))
+    # hidden_layers.append(layer)
+    delta = []
+    a = []
+    dw = []
+    # Forward Propagation
     for i in range(len(hidden_layers)):
       if i == 0:
-        hidden_layers[i].forward(input_matrix)
-        output_op =  sigmoid(hidden_layers[i].output)
-        hidden_layers[i].output = output_op
-
+        hidden_layers[i].forward(input_matrix, 0)
+        
       else:
-        hidden_layers[i].forward(hidden_layers[i-1].output)
-        hidden_layers[i].output =  sigmoid(hidden_layers[i].output)
+        hidden_layers[i].forward(hidden_layers[i-1].output, i%2)
+        
+    print(hidden_layers[Layers].output)
+    # Calculate Mean Squared Error
+    output_prediction = hidden_layers[len(hidden_layers)-1].output
+    # print(output_prediction - target_output)
+    error_out = (0.5)*(np.square((target_output - output_prediction)))
+    cost = error_out.sum()
+    print(error_out.sum())
 
-    print(hidden_layers[Layers-1].output)
-
+    # Backpropagation. Inputs: "parameters, cache, X, Y". Outputs: "grads". 
+    # W1, W2, b1, b2 = back_propagation(W1, b1, W2, b2, cache) 
     ## Calculate Back Propagation
+    back_propagation(cost)
+          
+    # Print the cost every 100 iterations 
+    if epoch % 100 == 0: 
+        print ("Cost after iteration % i: % f" % (epoch, cost)) 
+
 
 
 
