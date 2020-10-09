@@ -63,6 +63,14 @@ for i in range(TrainingSize):
   temp.append(int(data[Features]))
   dataset.append(temp)
 
+input_matrix = np.array(input_matrix)
+print(input_matrix)
+# Featurewise normalization
+for i in range(Features):
+  # print(input_matrix[:, i])
+  input_matrix[:, i] = (input_matrix[: , i] - np.mean(input_matrix[:, i]))/np.std(input_matrix[:, i])
+
+print(input_matrix)
 # Initializing no. of classes
 Classes = len(class_labels)
 labels = np.array(labels)
@@ -212,7 +220,7 @@ def train():
     # print(output_prediction - target_output)
     error_out = (0.5)*(np.square((target_output - output_prediction)))
     cost = error_out.sum()
-    print(error_out.sum())
+    # print(error_out.sum())
 
     back_propagation()
           
@@ -238,30 +246,12 @@ def test(report = False):
     class_name = int(temp[Features])
     inputs = np.array(temp[: Features]).astype(float)
       
-    data = []
-    for i in range(Features):
-        data.append(float(temp[i]))
-    data.append(int(temp[Features]))
-
-    input_vec = np.array(data)
-    input_vec[Features] = 1
-
     # Run Forward pass
     output = forward_pass(inputs)
-    print(output)
-    predicted = np.argmax(output, axis=1) + 1
-    # max_value = max(output)
-    # predicted = output.index(max_value)
-    print(predicted)
-    # # input_vec = np.array(input_vec)
-    # input_vec = input_vec.reshape((Features+1),1)
-    # # dot_prod = np.dot(weight_vec[1:],inputs) + weight_vec[0]
-    # dot_prod = np.dot(weight_vec, input_vec)[0]
-    # if dot_prod > 0:
-    #     predicted = 1
-    # else:
-    #     predicted = 2
-
+    predicted = np.argmax(output, axis=1)[0] + 1
+    # print(output)
+    # print(predicted)
+    
     if predicted == class_name:
         correct += 1
     else:
@@ -283,7 +273,7 @@ if __name__ == "__main__":
   print("Network structure :")
   print(structure)
   train()
-  test()
+  test(True)
 
   # TODO: Implement
   '''
