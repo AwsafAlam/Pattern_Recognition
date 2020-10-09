@@ -1,24 +1,3 @@
-# single layer network
-
-# Add a Layer class
-# Create an instance for eah layer, and take the structure defined in the text file
-
-# weights will be hard coded for now
-
-# There will be 4 activation algo.
-# 1. Sigmoid 2, unit step func. 3. RELU 4. softmax 5. study other literature
-
-# create a forward pass, 64 samples batch, and train the network
-# repeat until all the training samples are exhausted.
-
-# test using the test file and calculate the accuracy for hard-coded weights and bias.
-
-# --------- 
-
-# calculate the error rate, and based on that, implement the gradient descent algo.
-# using the gradient descent, adjust the weights and bias to get maximum fit of data.
-# ==========================================================
-
 import numpy as np
 
 np.random.seed(21) # fixed seed for random distribution of weight vector
@@ -33,10 +12,6 @@ labels, target_output = [], []
 class_labels = []
 structure, weight_vec, hidden_layers = [], [], []
 
-# ## We take in a batch of inputs
-# X = [[1,2, 3, 2.5],
-#     [2.0, 5.0, -1.0, 2.0],
-#     [-1.5,2.7, 3.3, -0.8]]
 # Reading training data
 f = open("trainNN.txt", "r")
 lines = f.readlines()
@@ -64,18 +39,16 @@ for i in range(TrainingSize):
   dataset.append(temp)
 
 input_matrix = np.array(input_matrix)
-print(input_matrix)
-# Featurewise normalization
-for i in range(Features):
-  # print(input_matrix[:, i])
-  input_matrix[:, i] = (input_matrix[: , i] - np.mean(input_matrix[:, i]))/np.std(input_matrix[:, i])
 
-print(input_matrix)
+# Featurewise normalization
+# for i in range(Features):
+#   input_matrix[:, i] = (input_matrix[: , i] - np.mean(input_matrix[:, i]))/np.std(input_matrix[:, i])
+
 # Initializing no. of classes
 Classes = len(class_labels)
 labels = np.array(labels)
 labels = labels.reshape(TrainingSize,1)
-print(labels.shape)
+# print(labels.shape)
 
 for i in range(len(labels)):
   temp = np.zeros(Classes)
@@ -156,6 +129,29 @@ def read_network_structure():
   structure.append(Features)
   for i in range(Layers):
     structure.append(int(lines[i+1].split()[1]))
+
+  structure.append(len(class_labels))
+
+  # Creating the Network
+  for i in range(len(structure) - 1):  # input layer is layer0
+    layer = Layer_dense(structure[i], structure[i+1])
+    hidden_layers.append(layer)
+
+  return structure
+
+def create_network():
+  """
+  docstring
+  """
+  global Layers, structure, Features, class_labels
+  print("Enter No. of Layers")
+  Layers = input()
+  print("Enter No. of Neurons/Layer")
+  neurons_per_layer = input()
+  print("Constructing Neural Network with {} Hidden Layers".format(Layers))
+  structure.append(Features)
+  for i in range(Layers):
+    structure.append(int(neurons_per_layer))
 
   structure.append(len(class_labels))
 
@@ -268,19 +264,16 @@ def test(report = False):
 
 
 if __name__ == "__main__":
-  read_network_structure()
+  print("Enter Network Structure :\n1-> File\n2-> Console")
+  q = input()
+  if q == 1:
+    read_network_structure()
+  else:
+    create_network()  
 
   print("Network structure :")
   print(structure)
   train()
   test(True)
-
-  # TODO: Implement
-  '''
-  Try out some variations on
-  1. layers = neurons
-  2. Layer id = No. of neurons
-  3. ReLu, sigmoid, softmax etc. 
-  '''
 
   
