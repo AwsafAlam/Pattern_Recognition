@@ -216,7 +216,6 @@ def train():
 
 def test(report = False):
   global Features, TrainingSize, TestSize, Classes
-  # TODO: needs changing
   f = open("testNN.txt", "r")
   lines = f.readlines()
   f.close()
