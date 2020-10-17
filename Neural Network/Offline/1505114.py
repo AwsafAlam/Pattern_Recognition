@@ -3,6 +3,7 @@ import numpy as np
 np.random.seed(21) # fixed seed for random distribution of weight vector
 
 MAXEPOCH = 1000
+ACTIVATION_FUNC = 0
 Classes, Features, Layers = 0, 0, 0
 TrainingSize, TestSize = 0, 0
 Learning_Rate = 0.01
@@ -177,10 +178,10 @@ def forward_pass(X):
   # Forward Propagation
   for i in range(len(network)):
     if i == 0:
-      network[i].forward(X, 0)
+      network[i].forward(X, ACTIVATION_FUNC)
       
     else:
-      network[i].forward(network[i-1].output, 0)
+      network[i].forward(network[i-1].output, ACTIVATION_FUNC)
 
   return network[ len(network) - 1].output
 
@@ -194,10 +195,10 @@ def train():
     # Forward Propagation
     for i in range(len(network)):
       if i == 0:
-        network[i].forward(input_matrix, 0)
+        network[i].forward(input_matrix, ACTIVATION_FUNC)
         
       else:
-        network[i].forward(network[i-1].output, 0)
+        network[i].forward(network[i-1].output, ACTIVATION_FUNC)
         
     # print(network[Layers].output)
     # Calculate Mean Squared Error
