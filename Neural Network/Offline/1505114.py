@@ -10,7 +10,7 @@ dataset = []
 input_matrix = []
 labels, target_output = [], []
 class_labels = []
-structure, weight_vec, hidden_layers = [], [], []
+structure, weight_vec, network = [], [], []
 
 # Reading training data
 f = open("trainNN.txt", "r")
@@ -60,7 +60,7 @@ target_output = np.array(target_output)
 # print(target_output)
 # ==============================================
 
-class Layer_dense:
+class Layer:
   """
   docstring
   """
@@ -96,9 +96,6 @@ class Layer_dense:
       return np.tanh(X) #tanh
     elif func == 2:
       return np.maximum(0, X) #ReLu
-    elif func == 3: #softmax
-      return np.exp(X) / np.sum(np.exp(X), axis=1, keepdims=True)
-
 
   def differential(self, X, func = 0):
     if func == 0:
@@ -107,14 +104,6 @@ class Layer_dense:
         return (1 - np.square(X))
     elif func == 2:
         return (1.0)*(X>0)+(0.1)*(X<0)
-    elif func == 3: #softmax
-      # Clipping value
-      minval = 0.000000000001
-      # Number of samples
-      m = X.shape[0]
-      # Loss formula, note that np.sum sums up the entire matrix and therefore does the job of two sums from the formula
-      loss = -1/m * np.sum(X * np.log(X.clip(min=minval)))
-      return loss
 
 def read_network_structure():
   """
@@ -134,8 +123,8 @@ def read_network_structure():
 
   # Creating the Network
   for i in range(len(structure) - 1):  # input layer is layer0
-    layer = Layer_dense(structure[i], structure[i+1])
-    hidden_layers.append(layer)
+    layer = Layer(structure[i], structure[i+1])
+    network.append(layer)
 
   return structure
 
@@ -157,8 +146,8 @@ def create_network():
 
   # Creating the Network
   for i in range(len(structure) - 1):  # input layer is layer0
-    layer = Layer_dense(structure[i], structure[i+1])
-    hidden_layers.append(layer)
+    layer = Layer(structure[i], structure[i+1])
+    network.append(layer)
 
   return structure
 
@@ -166,53 +155,53 @@ def back_propagation():
   """
   Back Propagation
   """
-  global hidden_layers, TrainingSize, target_output
-  i = len(hidden_layers) - 1
-  for i in reversed(range(len(hidden_layers))):
-    # print(hidden_layers[i].output)
+  global network, TrainingSize, target_output
+  i = len(network) - 1
+  for i in reversed(range(len(network))):
+    # print(network[i].output)
     errors = []
-    if i != len(hidden_layers) - 1:
-      hidden_layers[i].errors = np.dot(hidden_layers[i + 1].delta, hidden_layers[i + 1].weights.T)
-      hidden_layers[i].backward(hidden_layers[i].output)
+    if i != len(network) - 1:
+      network[i].errors = np.dot(network[i + 1].delta, network[i + 1].weights.T)
+      network[i].backward(network[i].output)
     else:
-      hidden_layers[i].errors = (0.5)*(np.square((target_output - hidden_layers[i].output)))
-      hidden_layers[i].backward(hidden_layers[i].output)
+      network[i].errors = (0.5)*(np.square((target_output - network[i].output)))
+      network[i].backward(network[i].output)
 
-    hidden_layers[i].weights -= Learning_Rate * np.dot(hidden_layers[i-1].output.T , hidden_layers[i].delta)
+    network[i].weights -= Learning_Rate * np.dot(network[i-1].output.T , network[i].delta)
 
 def forward_pass(X):
   """
   Forward pass throught Network
   """
-  global hidden_layers
+  global network
   # Forward Propagation
-  for i in range(len(hidden_layers)):
+  for i in range(len(network)):
     if i == 0:
-      hidden_layers[i].forward(X, 0)
+      network[i].forward(X, 0)
       
     else:
-      hidden_layers[i].forward(hidden_layers[i-1].output, 0)
+      network[i].forward(network[i-1].output, 0)
 
-  return hidden_layers[ len(hidden_layers) - 1].output
+  return network[ len(network) - 1].output
 
 def train():
   """
   Training the NN
   """
-  global input_matrix, structure, hidden_layers, class_labels
+  global input_matrix, structure, network, class_labels
   for epoch in range(MAXEPOCH):
     
     # Forward Propagation
-    for i in range(len(hidden_layers)):
+    for i in range(len(network)):
       if i == 0:
-        hidden_layers[i].forward(input_matrix, 0)
+        network[i].forward(input_matrix, 0)
         
       else:
-        hidden_layers[i].forward(hidden_layers[i-1].output, 0)
+        network[i].forward(network[i-1].output, 0)
         
-    # print(hidden_layers[Layers].output)
+    # print(network[Layers].output)
     # Calculate Mean Squared Error
-    output_prediction = hidden_layers[len(hidden_layers)-1].output
+    output_prediction = network[len(network)-1].output
     # print(output_prediction - target_output)
     error_out = (0.5)*(np.square((target_output - output_prediction)))
     cost = error_out.sum()
