@@ -6,9 +6,14 @@ from os.path import isfile, join
 
 INPUT_FILE = "input.mov"
 OUTPUT_FILE = "output.mov"
+REFERENCE = "reference.jpg"
 FRAMES_DIR = "./frames/"
 MODIFIED_FRAMES_DIR = "./out_frames/"
 FRAME_RATE = 15
+
+reference = 0
+#  Follow
+# https://medium.com/@iKhushPatel/convert-video-to-images-images-to-video-using-opencv-python-db27a128a481
 
 def extract_frames():
   """
@@ -74,10 +79,26 @@ def create_video():
   #     out.write(img_array[i])
   # out.release()
 
+def read_reference():
+  """
+  Convert reference image into array
+  """
+  global reference
+  reference = cv2.imread(REFERENCE)
+  print(reference)
+  print(reference.shape)
 
 if __name__ == "__main__":
-  extract_frames()
-  create_video()
+  # extract_frames()
+  # create_video()
+  read_reference()
+
+
+
+
+
+
+#----------------------------------------------------------------
 # cap = cv2.VideoCapture("C:\\Python27\\clip1.avi")
 # fgbg = cv2.BackgroundSubtractorMOG()
 # while(1):
