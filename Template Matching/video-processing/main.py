@@ -13,10 +13,10 @@ else:
     rval = False
 
 while rval:
-    rval, frame = vc.read()
     cv2.imwrite((FRAMES_DIR + "/" +str(c) + '.jpg'),frame)
     c = c + 1
     cv2.waitKey(1)
+    rval, frame = vc.read()
 vc.release()
 
 # cap = cv2.VideoCapture("C:\\Python27\\clip1.avi")
