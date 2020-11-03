@@ -14,10 +14,22 @@ w, h = template.shape[::-1]
 
 test_width, test_height = img_gray.shape
 
-print(img_gray.shape, template.shape)
+img_gray = np.array(img_gray)
+img_gray.astype(np.int64)
+
+template = np.array(template)
+template.astype(np.int64)
 
 x_axis, y_axis = [], []
 
+row_sums = template.sum(axis=1)
+template = template / row_sums[:, np.newaxis]
+
+
+row_sums = img_gray.sum(axis=1)
+img_gray = img_gray / row_sums[:, np.newaxis]
+
+print(img_gray.shape, template.shape)
 
 def calculate_distance(row = 0, col = 0):
   """
@@ -29,33 +41,37 @@ def calculate_distance(row = 0, col = 0):
     for j in range(w):
       diff = int(template[i][j]) - int(img_gray[row + i][col + j])
       sum = sum + pow(int(diff), 2)
-      if diff != 0:
-        f.write("Diff {}: [{},{}] ".format(diff,i,j))
+      if sum != 0:
+        # f.write(str(sum)+"\n")
+        f.write("Diff {}: [{},{}] - SUM={} \n".format(diff,i,j,sum))
     f.write("\n\n-------------------\n\n")
   f.write("--------------------------------\n\n")
   return int(sum)
 
 f.write(str(calculate_distance(0,0)))
-
-for i in range(test_height - h):
-  for j in range(test_width - w):
+min = 9999999999999
+centre_i, centre_j = 0,0
+for i in range(test_height - h + 1):
+  for j in range(test_width - w + 1):
     # calculating the mean distance
-    min = calculate_distance(i,j)
-    # if int(img_gray[i][j]) != 255:
-    #   # print(img_gray[i][j])
-    #   x_axis.append(i)
-    #   y_axis.append(j)
-    #   # print("Coord: ({},{})".format(i,j))
-      
+    dist = calculate_distance(i,j)
+    print("Coord: ({},{}) - Dist={}".format(i,j,dist))
+    if(dist < min):
+      print("Found min --- \n\n")
+      min = dist
+      centre_i = i
+      centre_j = j
+    
+print("done")
+print(centre_i,centre_j)
+# res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
+# threshold = 0.9
+# loc = np.where( res >= threshold)
+# print(loc)
 
-res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
-threshold = 0.9
-loc = np.where( res >= threshold)
-print(loc)
+# for pt in zip(*loc[::-1]):
+#   cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
 
-for pt in zip(*loc[::-1]):
-  cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
-
-cv2.imwrite('final.jpg',img_rgb)
+# cv2.imwrite('final.jpg',img_rgb)
 
 f.close()
