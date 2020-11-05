@@ -16,11 +16,11 @@ w, h = template.shape
 
 test_width, test_height = img_gray.shape
 
-# img_gray = np.array(img_gray)
-# img_gray.astype(np.int64)
+img_gray = np.array(img_gray)
+img_gray.astype(np.int64)
 
-# template = np.array(template)
-# template.astype(np.int64)
+template = np.array(template)
+template.astype(np.int64)
 
 # row_sums = template.sum(axis=1)
 # template = template / row_sums[:, np.newaxis]
@@ -71,5 +71,11 @@ for i in range(test_width - w + 1):
     
 print("done")
 print(centre_i,centre_j)
+
+# centre_i,centre_j = 150, 240
+cv2.rectangle(img_rgb, (centre_i,centre_j), (centre_i + h, centre_j + w), (0,0,255), 2)
+# cv2.rectangle(img_rgb, (centre_j,centre_i), (centre_i + h, centre_j + w), (0,0,255), 2)
+
+cv2.imwrite('final.jpg',img_rgb)
 
 f.close()
