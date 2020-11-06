@@ -146,7 +146,7 @@ print(centre_i,centre_j)
 
 # centre_i,centre_j = 150, 240
 cv2.rectangle(img_rgb, (centre_i,centre_j), (centre_i + h, centre_j + w), (0,0,255), 2)
-# cv2.rectangle(img_rgb, (centre_j,centre_i), (centre_i + h, centre_j + w), (0,0,255), 2)
+# cv2.rectangle(img_rgb, (centre_j,centre_i), (centre_j + h, centre_i + w), (0,0,255), 2)
 
 cv2.imwrite('final.jpg',img_rgb)
 
