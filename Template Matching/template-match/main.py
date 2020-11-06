@@ -57,7 +57,7 @@ def calculate_distance(row = 0, col = 0):
 
 print(str(calculate_distance(0,0)))
 min = 9999999999999
-centre_i, centre_j = 0,0
+centre_i, centre_j = 0,0 
 for i in range(test_width - w + 1):
   for j in range(test_height - h + 1):
     # calculating the mean distance
