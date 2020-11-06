@@ -2,6 +2,7 @@ from glob import glob
 import cv2
 import numpy as np
 import os
+import math
 from os.path import isfile, join
 
 INPUT_FILE = "input.mov"
@@ -103,12 +104,26 @@ def calculate_distance(img_gray,row = 0, col = 0):
   # f.write("--------------------------------\n\n")
   return int(sum)
 
+def template_match_2D_log(frame):
+  """
+  docstring
+  """
+  print("Starting 2D log ...")
+  pass
 
-def template_match_exhaustive(frame):
+def template_match_Hierarchical(frame):
+  """
+  docstring
+  """
+  print("Starting Hierarchical...")
+  pass
+
+def template_match(frame , method):
   """
   docstring
   """
   global template,w,h,p, Xi, Xj
+  times_searched = 0
   # Read and convert both images to grayscale
   test_img = MODIFIED_FRAMES_DIR + str(frame+1) + '.jpg'
   print(test_img)
@@ -137,18 +152,22 @@ def template_match_exhaustive(frame):
   centre_i, centre_j = 0,0
   # start = (Xi - p, Xi+p)
   # end = (Xj - p, Xj + p)
+  if method == 2:
+    p = p/2
+
   if frame == 0:
     m_start, m_end = Xi,test_width - w + 1
     n_start, n_end = Xj,test_height - h + 1
   else:
-    m_start, m_end = Xi - p, Xi+p
-    n_start, n_end = Xj - p, Xj + p
+    m_start, m_end = math.floor(Xi - p), math.floor(Xi+p)
+    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
 
   for i in range(m_start, m_end):
     for j in range(n_start, n_end):
       # calculating the mean distance
       dist = calculate_distance(img_gray, i,j)
       f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
+      times_searched = times_searched + 1
       if(dist < min):
         print("Found min ({})--- [{},{}]\n".format(dist,i,j))
         min = dist
@@ -168,9 +187,9 @@ def template_match_exhaustive(frame):
   # loc = np.where( res >= threshold)
 
   # for pt in zip(*loc[::-1]):
-  #   cv2.rectangle(img_rgb, pt, (pt[0] + w, pt[1] + h), (0,0,255), 2)
-
+  #   cv2.rectangle(img_rgb, pt, (pt[0] + h, pt[1] + w), (0,0,255), 2)
   cv2.imwrite(test_img,img_rgb)
+  return times_searched
 
 
 def read_reference():
@@ -184,14 +203,21 @@ def read_reference():
 
 
 if __name__ == "__main__":
+
+  print("Enter search method:\n1. Exhaustive\n2. 2D Log\n3. Hierarchical\n")
+  method = int(input())
+  
   print("Enter the value of p")
   p = int(input())
   frames = extract_frames()
   print("Total Frames: {}".format(frames))
+  performance = 0
   for i in range(frames-2):
     print("Running for frame {}".format(i))
-    template_match_exhaustive(i)
+    performance = performance +template_match(i, method)
   
+  performance = performance / frames
+  print("Performance: {}".format(performance))
   create_video()
   # read_reference()
   f.close()
