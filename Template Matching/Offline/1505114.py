@@ -97,24 +97,12 @@ def calculate_distance(img_gray,row = 0, col = 0):
 
 def template_match_2D_log(frame):
   """
-  docstring
+  2D Log
   """
   print("Starting 2D log ...")
-  pass
-
-def template_match_Hierarchical(frame):
-  """
-  docstring
-  """
-  print("Starting Hierarchical...")
-  pass
-
-def template_match(frame , method):
-  """
-  docstring
-  """
   global template,w,h,p, Xi, Xj
   times_searched = 0
+  
   # Read and convert both images to grayscale
   test_img = MODIFIED_FRAMES_DIR + str(frame+1) + '.jpg'
   print(test_img)
@@ -179,7 +167,154 @@ def template_match(frame , method):
 
   # for pt in zip(*loc[::-1]):
   #   cv2.rectangle(img_rgb, pt, (pt[0] + h, pt[1] + w), (0,0,255), 2)
+  cv2.imwrite(test_img,img_rgb)
+  return times_searched
+
+def template_match_Hierarchical(frame):
+  """
+  docstring
+  """
+  print("Starting Hierarchical...")
+  global template,w,h,p, Xi, Xj
+  times_searched = 0
   
+  # Read and convert both images to grayscale
+  test_img = MODIFIED_FRAMES_DIR + str(frame+1) + '.jpg'
+  print(test_img)
+  img_rgb = cv2.imread(test_img)
+  img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+
+  test_width, test_height = img_gray.shape
+
+  img_gray = np.array(img_gray)
+  img_gray = img_gray.astype(np.int64)
+
+  template = np.array(template)
+  template = template.astype(np.int64)
+
+  # row_sums = template.sum(axis=1)
+  # template = template / row_sums[:, np.newaxis]
+
+  # row_sums = img_gray.sum(axis=1)
+  # img_gray = img_gray / row_sums[:, np.newaxis]
+
+  print(img_gray.shape, template.shape)
+  print("({},{}) - ({},{})".format(test_width,test_height,w,h))
+  print(str(test_height - h), str(test_height), str(h))
+
+  min = INF
+  centre_i, centre_j = 0,0
+  # start = (Xi - p, Xi+p)
+  # end = (Xj - p, Xj + p)
+  if method == 2:
+    p = p/2
+
+  if frame == 0:
+    m_start, m_end = Xi,test_width - w + 1
+    n_start, n_end = Xj,test_height - h + 1
+  else:
+    m_start, m_end = math.floor(Xi - p), math.floor(Xi+p)
+    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
+
+  for i in range(m_start, m_end):
+    for j in range(n_start, n_end):
+      # calculating the mean distance
+      dist = calculate_distance(img_gray, i,j)
+      f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
+      times_searched = times_searched + 1
+      if(dist < min):
+        print("Found min ({})--- [{},{}]\n".format(dist,i,j))
+        min = dist
+        centre_i = i
+        centre_j = j
+      
+  print("done")
+  print(centre_i,centre_j)
+  if frame == 0:
+    Xi = centre_i
+    Xj = centre_j
+  # cv2.rectangle(img_rgb, (centre_i,centre_j), (centre_i + h, centre_j + w), (0,0,255), 2)
+  cv2.rectangle(img_rgb, (centre_j,centre_i), (centre_j + h, centre_i + w), (0,0,255), 2)
+  
+  # res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
+  # threshold = 0.9
+  # loc = np.where( res >= threshold)
+
+  # for pt in zip(*loc[::-1]):
+  #   cv2.rectangle(img_rgb, pt, (pt[0] + h, pt[1] + w), (0,0,255), 2)
+  cv2.imwrite(test_img,img_rgb)
+  return times_searched
+
+def template_match_exhaustive(frame):
+  """
+  Exhaustive search
+  """
+  global template,w,h,p, Xi, Xj
+  times_searched = 0
+  
+  print("Starting Exhaustive search...")
+  # Read and convert both images to grayscale
+  test_img = MODIFIED_FRAMES_DIR + str(frame+1) + '.jpg'
+  print(test_img)
+  img_rgb = cv2.imread(test_img)
+  img_gray = cv2.cvtColor(img_rgb, cv2.COLOR_BGR2GRAY)
+
+  test_width, test_height = img_gray.shape
+
+  img_gray = np.array(img_gray)
+  img_gray = img_gray.astype(np.int64)
+
+  template = np.array(template)
+  template = template.astype(np.int64)
+
+  # row_sums = template.sum(axis=1)
+  # template = template / row_sums[:, np.newaxis]
+
+  # row_sums = img_gray.sum(axis=1)
+  # img_gray = img_gray / row_sums[:, np.newaxis]
+
+  print(img_gray.shape, template.shape)
+  print("({},{}) - ({},{})".format(test_width,test_height,w,h))
+  print(str(test_height - h), str(test_height), str(h))
+
+  min = INF
+  centre_i, centre_j = 0,0
+  # start = (Xi - p, Xi+p)
+  # end = (Xj - p, Xj + p)
+  
+  if frame == 0:
+    m_start, m_end = Xi,test_width - w + 1
+    n_start, n_end = Xj,test_height - h + 1
+  else:
+    m_start, m_end = math.floor(Xi - p), math.floor(Xi+p)
+    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
+
+  for i in range(m_start, m_end):
+    for j in range(n_start, n_end):
+      # calculating the mean distance
+      dist = calculate_distance(img_gray, i,j)
+      f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
+      times_searched = times_searched + 1
+      if(dist < min):
+        print("Found min ({})--- [{},{}]\n".format(dist,i,j))
+        min = dist
+        centre_i = i
+        centre_j = j
+      
+  print("done")
+  print(centre_i,centre_j)
+  if frame == 0:
+    Xi = centre_i
+    Xj = centre_j
+  # cv2.rectangle(img_rgb, (centre_i,centre_j), (centre_i + h, centre_j + w), (0,0,255), 2)
+  cv2.rectangle(img_rgb, (centre_j,centre_i), (centre_j + h, centre_i + w), (0,0,255), 2)
+  
+  # res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
+  # threshold = 0.9
+  # loc = np.where( res >= threshold)
+
+  # for pt in zip(*loc[::-1]):
+  #   cv2.rectangle(img_rgb, pt, (pt[0] + h, pt[1] + w), (0,0,255), 2)
   cv2.imwrite(test_img,img_rgb)
   return times_searched
 
@@ -205,9 +340,14 @@ if __name__ == "__main__":
   frames = extract_frames()
   print("Total Frames: {}".format(frames))
   performance = 0
-  for i in range(frames-2):
+  for i in range(frames - 2):
     print("Running for frame {}".format(i))
-    performance = performance +template_match(i, method)
+    if method == 3:
+      performance = performance + template_match_Hierarchical(i)
+    elif method == 2:
+      performance = performance + template_match_2D_log(i)
+    else:
+      performance = performance + template_match_exhaustive(i)
   
   performance = performance / frames
   print("Performance: {}".format(performance))
