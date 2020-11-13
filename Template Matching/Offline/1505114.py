@@ -51,7 +51,6 @@ def extract_frames():
   print("All frames extracted successfully...")
   return c
 
-
 def create_video():
   """
   Creates output video from images
@@ -86,22 +85,14 @@ def calculate_distance(img_gray,row = 0, col = 0):
   """
   global p
   f.write("Started matching [{},{}]\n".format(row, col))
-  M1 = template
+  M1 = template.astype(np.int64)
   M2 = img_gray[row:row+w,col: col+h]
-  diff_mat = M1-M2
+  M2 = M2.astype(np.int64)
+  diff_mat = M1 - M2
   M = np.absolute(diff_mat)
   final = M * M
   sum = np.sum(final, dtype = np.int64)
-  # sum, diff = 0 , 0
-  # for i in range(h):
-  #   for j in range(w):
-  #     diff = int(template[i][j]) - int(img_gray[row + i][col + j])
-  #     sum = sum + pow(int(diff), 2)
-  #     if sum != 0:
-  #       # f.write(str(sum)+"\n")
-  #       f.write("Diff {}: [{},{}] - SUM={} \n".format(diff,i,j,sum))
-  #   f.write("\n\n-------------------\n\n")
-  # f.write("--------------------------------\n\n")
+
   return int(sum)
 
 def template_match_2D_log(frame):
@@ -133,10 +124,10 @@ def template_match(frame , method):
   test_width, test_height = img_gray.shape
 
   img_gray = np.array(img_gray)
-  img_gray.astype(np.int64)
+  img_gray = img_gray.astype(np.int64)
 
   template = np.array(template)
-  template.astype(np.int64)
+  template = template.astype(np.int64)
 
   # row_sums = template.sum(axis=1)
   # template = template / row_sums[:, np.newaxis]
@@ -188,6 +179,7 @@ def template_match(frame , method):
 
   # for pt in zip(*loc[::-1]):
   #   cv2.rectangle(img_rgb, pt, (pt[0] + h, pt[1] + w), (0,0,255), 2)
+  
   cv2.imwrite(test_img,img_rgb)
   return times_searched
 
@@ -209,6 +201,7 @@ if __name__ == "__main__":
   
   print("Enter the value of p")
   p = int(input())
+
   frames = extract_frames()
   print("Total Frames: {}".format(frames))
   performance = 0
