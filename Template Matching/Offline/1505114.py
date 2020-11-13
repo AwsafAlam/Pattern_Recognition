@@ -78,12 +78,13 @@ def create_video():
   out.release()
   print("Output video generated successfully...")
 
-def calculate_distance(img_gray,row = 0, col = 0):
+def calculate_distance(img_gray, template, row = 0, col = 0):
   """
   calculate the relative difference
   """
-  global p
   f.write("Started matching [{},{}]\n".format(row, col))
+  w, h = template.shape
+
   M1 = template.astype(np.int64)
   M2 = img_gray[row:row+w,col: col+h]
   M2 = M2.astype(np.int64)
@@ -131,7 +132,7 @@ def template_match_2D_log(frame, p):
     for i in range(m_start, m_end):
       for j in range(n_start, n_end):
         # calculating the mean distance
-        dist = calculate_distance(img_gray, i,j)
+        dist = calculate_distance(img_gray,template, i,j)
         f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
         times_searched = times_searched + 1
         if(dist < min):
@@ -153,7 +154,7 @@ def template_match_2D_log(frame, p):
       for i in range(m_start, m_end):
         for j in range(n_start, n_end):
           # calculating the mean distance
-          dist = calculate_distance(img_gray, i,j)
+          dist = calculate_distance(img_gray,template, i,j)
           f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
           times_searched = times_searched + 1
           if(dist < min):
@@ -182,12 +183,13 @@ def template_match_2D_log(frame, p):
   cv2.imwrite(test_img,img_rgb)
   return times_searched
 
-def template_match_Hierarchical(frame):
+
+def template_match_Hierarchical(frame, p):
   """
-  docstring
+  Hierarchical search
   """
   print("Starting Hierarchical...")
-  global template,w,h,p, Xi, Xj
+  global template,w,h, Xi, Xj
   times_searched = 0
   
   # Read and convert both images to grayscale
@@ -207,43 +209,140 @@ def template_match_Hierarchical(frame):
   print(img_gray.shape, template.shape)
   print("({},{}) - ({},{})".format(test_width,test_height,w,h))
   print(str(test_height - h), str(test_height), str(h))
-
+  print("Starting p = {}".format(p))
   min = INF
   centre_i, centre_j = 0,0
-  # start = (Xi - p, Xi+p)
-  # end = (Xj - p, Xj + p)
-  if method == 2:
-    p = p/2
+  
 
   if frame == 0:
     m_start, m_end = Xi,test_width - w + 1
     n_start, n_end = Xj,test_height - h + 1
+
+    for i in range(m_start, m_end):
+      for j in range(n_start, n_end):
+        # calculating the mean distance
+        dist = calculate_distance(img_gray, template, i,j)
+        f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
+        times_searched = times_searched + 1
+        if(dist < min):
+          print("Found min ({})--- [{},{}]\n".format(dist,i,j))
+          min = dist
+          centre_i = i
+          centre_j = j
   else:
-    m_start, m_end = math.floor(Xi - p), math.floor(Xi+p)
+    #-----------------------------------------------------------------------------------------------
+    #step 1
+    #create level 0,1,2 images
+    referenceImageLevels =[]
+    testImageLevels =[]
+
+    #level 0. The original image
+    referenceImageLevels.append(template)
+    testImageLevels.append(img_gray)
+
+    #level 1 -- downgrade
+    referenceImageLevels.append(cv2.pyrDown(referenceImageLevels[0]))
+    testImageLevels.append(cv2.pyrDown(testImageLevels[0]))
+
+    # level 2 -- downgrade
+    referenceImageLevels.append(cv2.pyrDown(referenceImageLevels[1]))
+    testImageLevels.append(cv2.pyrDown(testImageLevels[1]))
+    # -----------------------------------------------------------------------------------------------
+
+    # -----------------------------------------------------------------------------------------------
+    #step 2
+    p = p//4
+    Xi = Xi//4
+    Xj = Xj//4
+
+    # Abstraction bounding box --
+    m_start, m_end = math.floor(Xi - p), math.floor(Xi+ p)
     n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
 
-  for i in range(m_start, m_end):
-    for j in range(n_start, n_end):
-      # calculating the mean distance
-      dist = calculate_distance(img_gray, i,j)
-      f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
-      times_searched = times_searched + 1
-      if(dist < min):
-        print("Found min ({})--- [{},{}]\n".format(dist,i,j))
-        min = dist
-        centre_i = i
-        centre_j = j
-      
+    for i in range(m_start, m_end):
+      for j in range(n_start, n_end):
+        # calculating the mean distance
+        dist = calculate_distance(testImageLevels[2], referenceImageLevels[2], i,j)
+        f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
+        times_searched = times_searched + 1
+        if(dist < min):
+          print("Found min ({})--- [{},{}]\n".format(dist,i,j))
+          min = dist
+          centre_i = i
+          centre_j = j
+
+    Xi = centre_i
+    Xj = centre_j
+
+    # -----------------------------------------------------------------------------------------------
+    # step 3
+    p = 1
+    Xi = int( 2*Xi)
+    Xj = int( 2*Xj)
+
+    
+    min = INF
+    centre_i, centre_j = 0,0
+  
+    # Abstraction bounding box --
+    m_start, m_end = math.floor(Xi - p), math.floor(Xi+ p)
+    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
+
+    for i in range(m_start, m_end):
+      for j in range(n_start, n_end):
+        # calculating the mean distance
+        dist = calculate_distance(testImageLevels[1], referenceImageLevels[1], i,j)
+        f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
+        times_searched = times_searched + 1
+        if(dist < min):
+          print("Found min ({})--- [{},{}]\n".format(dist,i,j))
+          min = dist
+          centre_i = i
+          centre_j = j
+
+    Xi = centre_i
+    Xj = centre_j
+
+    # -----------------------------------------------------------------------------------------------
+    # step 4
+    p = 1
+    Xi = int (2*Xi)
+    Xj = int (2*Xj)
+
+    min = INF
+    centre_i, centre_j = 0,0
+  
+    # Abstraction bounding box --
+    m_start, m_end = math.floor(Xi - p), math.floor(Xi+ p)
+    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
+
+    for i in range(m_start, m_end):
+      for j in range(n_start, n_end):
+        # calculating the mean distance
+        dist = calculate_distance(testImageLevels[0], referenceImageLevels[0], i,j)
+        f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
+        times_searched = times_searched + 1
+        if(dist < min):
+          print("Found min ({})--- [{},{}]\n".format(dist,i,j))
+          min = dist
+          centre_i = i
+          centre_j = j
+
+    Xi = centre_i
+    Xj = centre_j
+  
   print("done")
   print(centre_i,centre_j)
   if frame == 0:
     Xi = centre_i
     Xj = centre_j
+  
   # cv2.rectangle(img_rgb, (centre_i,centre_j), (centre_i + h, centre_j + w), (0,0,255), 2)
   cv2.rectangle(img_rgb, (centre_j,centre_i), (centre_j + h, centre_i + w), (0,0,255), 2)
   
   cv2.imwrite(test_img,img_rgb)
   return times_searched
+
 
 
 def template_match_exhaustive(frame):
@@ -293,7 +392,7 @@ def template_match_exhaustive(frame):
   for i in range(m_start, m_end):
     for j in range(n_start, n_end):
       # calculating the mean distance
-      dist = calculate_distance(img_gray, i,j)
+      dist = calculate_distance(img_gray,template,i,j)
       f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
       times_searched = times_searched + 1
       if(dist < min):
@@ -344,7 +443,7 @@ if __name__ == "__main__":
   for i in range(frames - 2):
     print("Running for frame {}".format(i))
     if method == 3:
-      performance = performance + template_match_Hierarchical(i)
+      performance = performance + template_match_Hierarchical(i, p)
     elif method == 2:
       performance = performance + template_match_2D_log(i , p)
     else:
