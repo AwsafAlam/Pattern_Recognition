@@ -252,7 +252,7 @@ def template_match_Hierarchical(frame, p):
     Xi = Xi//4
     Xj = Xj//4
 
-    refW, refH = templateLevels[2].shape
+    ref_width, ref_height = templateLevels[2].shape
     test_width, test_height= testLevels[2].shape
     
     pointsY = [Xi-p , Xi , Xi+p]
@@ -260,7 +260,7 @@ def template_match_Hierarchical(frame, p):
           
     for i in pointsY:
       for j in pointsX:
-        if i < 0 or i > test_width-refW or j < 0 or j > test_height - refH:
+        if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
         # calculating the mean distance
         dist = calculate_distance(testLevels[2], templateLevels[2], int(i),int(j))
@@ -285,11 +285,7 @@ def template_match_Hierarchical(frame, p):
     min = INF
     centre_i, centre_j = 0,0
   
-    # Abstraction bounding box --
-    m_start, m_end = math.floor(Xi - p), math.floor(Xi+ p)
-    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
-
-    refW, refH= templateLevels[1].shape
+    ref_width, ref_height= templateLevels[1].shape
     test_width, test_height= testLevels[1].shape
     
     pointsY = [Xi-p , Xi , Xi+p]
@@ -297,7 +293,7 @@ def template_match_Hierarchical(frame, p):
           
     for i in pointsY:
       for j in pointsX:
-        if i < 0 or i > test_width-refW or j < 0 or j > test_height - refH:
+        if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
         # calculating the mean distance
         dist = calculate_distance(testLevels[1], templateLevels[1], int(i),int(j))
@@ -321,11 +317,7 @@ def template_match_Hierarchical(frame, p):
     min = INF
     centre_i, centre_j = 0,0
   
-    # Abstraction bounding box --
-    m_start, m_end = math.floor(Xi - p), math.floor(Xi+ p)
-    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
-
-    refW, refH= templateLevels[0].shape
+    ref_width, ref_height= templateLevels[0].shape
     test_width, test_height= testLevels[0].shape
     
     pointsY = [Xi-p , Xi , Xi+p]
@@ -333,7 +325,7 @@ def template_match_Hierarchical(frame, p):
           
     for i in pointsY:
       for j in pointsX:
-        if i < 0 or i > test_width-refW or j < 0 or j > test_height - refH:
+        if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
         # calculating the mean distance
         dist = calculate_distance(testLevels[0], templateLevels[0], int(i),int(j))
