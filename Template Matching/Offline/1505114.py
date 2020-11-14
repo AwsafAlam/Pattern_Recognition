@@ -235,39 +235,32 @@ def template_match_Hierarchical(frame, p):
           centre_i = i
           centre_j = j
   else:
-    templateLevels, testLevels = [], []
-
-    # L0. original image
-    templateLevels.append(template)
-    testLevels.append(img_gray)
-
+    
     # L1 -- downgrade
-    templateLevels.append(cv2.pyrDown(template))
-    testLevels.append(cv2.pyrDown(img_gray))
+    templateL1 = cv2.pyrDown(template)
+    testL1 = cv2.pyrDown(img_gray)
 
     # L2 -- downgrade
-    templateLevels.append(cv2.pyrDown(templateLevels[1]))
-    testLevels.append(cv2.pyrDown(testLevels[1]))
+    templateL2 = cv2.pyrDown(templateL1)
+    testL2 = cv2.pyrDown(testL1)
     
-    # -----------------------------------------------------------------------------------------------
-    #step 2
     p = p//4
     Xi = Xi//4
     Xj = Xj//4
 
-    ref_width, ref_height = templateLevels[2].shape
-    test_width, test_height= testLevels[2].shape
+    ref_width, ref_height = templateL2.shape
+    test_width, test_height= testL2.shape
     
-    pointsY = [Xi-p , Xi , Xi+p]
-    pointsX = [Xj-p , Xj , Xj+p]
+    pointsI = [Xi-p , Xi , Xi+p]
+    pointsJ = [Xj-p , Xj , Xj+p]
           
-    for i in pointsY:
-      for j in pointsX:
+    for i in pointsI:
+      for j in pointsJ:
         # bound check
         if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
         # calculating the mean distance
-        dist = calculate_distance(testLevels[2], templateLevels[2], int(i),int(j))
+        dist = calculate_distance(testL2, templateL2, int(i),int(j))
         f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
         times_searched = times_searched + 1
         if(dist < min):
@@ -279,8 +272,7 @@ def template_match_Hierarchical(frame, p):
     Xi = centre_i
     Xj = centre_j
 
-    # -----------------------------------------------------------------------------------------------
-    # step 3
+    # reset centre point
     p = 1
     Xi = int(2*Xi)
     Xj = int(2*Xj)
@@ -289,18 +281,18 @@ def template_match_Hierarchical(frame, p):
     min = INF
     centre_i, centre_j = 0,0
   
-    ref_width, ref_height= templateLevels[1].shape
-    test_width, test_height= testLevels[1].shape
+    ref_width, ref_height= templateL1.shape
+    test_width, test_height= testL1.shape
     
-    pointsY = [Xi-p , Xi , Xi+p]
-    pointsX = [Xj-p , Xj , Xj+p]
+    pointsI = [Xi-p , Xi , Xi+p]
+    pointsJ = [Xj-p , Xj , Xj+p]
           
-    for i in pointsY:
-      for j in pointsX:
+    for i in pointsI:
+      for j in pointsJ:
         if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
         # calculating the mean distance
-        dist = calculate_distance(testLevels[1], templateLevels[1], int(i),int(j))
+        dist = calculate_distance(testL1, templateL1, int(i),int(j))
         f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
         times_searched = times_searched + 1
         if(dist < min):
@@ -312,7 +304,6 @@ def template_match_Hierarchical(frame, p):
     Xi = centre_i
     Xj = centre_j
 
-    # -----------------------------------------------------------------------------------------------
     # step 4
     p = 1
     Xi = int (2*Xi)
@@ -320,19 +311,20 @@ def template_match_Hierarchical(frame, p):
 
     min = INF
     centre_i, centre_j = 0,0
-  
-    ref_width, ref_height= templateLevels[0].shape
-    test_width, test_height= testLevels[0].shape
+
+    # L0 taking original
+    ref_width, ref_height = template.shape
+    test_width, test_height= img_gray.shape
     
-    pointsY = [Xi-p , Xi , Xi+p]
-    pointsX = [Xj-p , Xj , Xj+p]
+    pointsI = [Xi-p , Xi , Xi+p]
+    pointsJ = [Xj-p , Xj , Xj+p]
           
-    for i in pointsY:
-      for j in pointsX:
+    for i in pointsI:
+      for j in pointsJ:
         if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
         # calculating the mean distance
-        dist = calculate_distance(testLevels[0], templateLevels[0], int(i),int(j))
+        dist = calculate_distance(img_gray, template, int(i),int(j))
         f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
         times_searched = times_searched + 1
         if(dist < min):
