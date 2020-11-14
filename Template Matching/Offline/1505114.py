@@ -252,11 +252,11 @@ def template_match_Hierarchical(frame, p):
     ref_width, ref_height = templateL2.shape
     test_width, test_height= testL2.shape
     
-    pointsI = [Xi-p , Xi , Xi+p]
-    pointsJ = [Xj-p , Xj , Xj+p]
-          
-    for i in pointsI:
-      for j in pointsJ:
+    m_start, m_end = math.floor(Xi - p), math.floor(Xi+p)
+    n_start, n_end = math.floor(Xj - p), math.floor(Xj + p)
+
+    for i in range(m_start, m_end):
+      for j in range(n_start, n_end):
         # bound check
         if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
@@ -273,7 +273,7 @@ def template_match_Hierarchical(frame, p):
     Xi = centre_i
     Xj = centre_j
 
-    # reset centre point
+    # reset centre point, processing L1
     p = 1
     Xi = int(2*Xi)
     Xj = int(2*Xj)
@@ -305,7 +305,7 @@ def template_match_Hierarchical(frame, p):
     Xi = centre_i
     Xj = centre_j
 
-    # step 4
+    # processing for L0
     p = 1
     Xi = int (2*Xi)
     Xj = int (2*Xj)
