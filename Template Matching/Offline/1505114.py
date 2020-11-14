@@ -244,6 +244,7 @@ def template_match_Hierarchical(frame, p):
     templateL2 = cv2.pyrDown(templateL1)
     testL2 = cv2.pyrDown(testL1)
     
+    # Search in the rectangle [-p/4, p/4]  [-p/4, p/4] centered at (x/4, y/4)
     p = p//4
     Xi = Xi//4
     Xj = Xj//4
