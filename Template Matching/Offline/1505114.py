@@ -170,7 +170,6 @@ def template_match_2D_log(frame, p):
       Xj = centre_j
       p = p / 2.0
 
-      # when the distance is 1, break the while loop
       if (distance == 1):
           break
       
