@@ -376,12 +376,6 @@ def template_match_exhaustive(frame):
   template = np.array(template)
   template = template.astype(np.int64)
 
-  # row_sums = template.sum(axis=1)
-  # template = template / row_sums[:, np.newaxis]
-
-  # row_sums = img_gray.sum(axis=1)
-  # img_gray = img_gray / row_sums[:, np.newaxis]
-
   print(img_gray.shape, template.shape)
   print("({},{}) - ({},{})".format(test_width,test_height,w,h))
   print(str(test_height - h), str(test_height), str(h))
@@ -412,18 +406,13 @@ def template_match_exhaustive(frame):
       
   print("done")
   print(centre_i,centre_j)
-  if frame == 0:
-    Xi = centre_i
-    Xj = centre_j
+  # if frame == 0:
+  Xi = centre_i
+  Xj = centre_j
+  
   # cv2.rectangle(img_rgb, (centre_i,centre_j), (centre_i + h, centre_j + w), (0,0,255), 2)
   cv2.rectangle(img_rgb, (centre_j,centre_i), (centre_j + h, centre_i + w), (0,0,255), 2)
   
-  # res = cv2.matchTemplate(img_gray,template,cv2.TM_CCOEFF_NORMED)
-  # threshold = 0.9
-  # loc = np.where( res >= threshold)
-
-  # for pt in zip(*loc[::-1]):
-  #   cv2.rectangle(img_rgb, pt, (pt[0] + h, pt[1] + w), (0,0,255), 2)
   cv2.imwrite(test_img,img_rgb)
   return times_searched
 
