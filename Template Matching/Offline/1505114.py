@@ -153,6 +153,9 @@ def template_match_2D_log(frame, p):
 
       for i in range(m_start, m_end):
         for j in range(n_start, n_end):
+          # bound check
+          if i < 0 or i > test_width - w or j < 0 or j > test_height - h:
+              continue
           # calculating the mean distance
           dist = calculate_distance(img_gray,template, i,j)
           f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
@@ -260,6 +263,7 @@ def template_match_Hierarchical(frame, p):
           
     for i in pointsY:
       for j in pointsX:
+        # bound check
         if i < 0 or i > test_width-ref_width or j < 0 or j > test_height - ref_height:
             continue
         # calculating the mean distance
@@ -394,6 +398,10 @@ def template_match_exhaustive(frame):
 
   for i in range(m_start, m_end):
     for j in range(n_start, n_end):
+      # bound check
+      if i < 0 or i > test_width - w or j < 0 or j > test_height - h:
+          continue
+        
       # calculating the mean distance
       dist = calculate_distance(img_gray,template,i,j)
       f.write("Coord: ({},{}) - Dist={}".format(i,j,dist))
