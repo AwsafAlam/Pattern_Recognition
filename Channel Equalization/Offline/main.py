@@ -9,7 +9,8 @@ TRAIN_DATA = []
 TEST_DATA = []
 h = []
 mean, variance = 0, 0
-
+transition_prob = []
+clusters = 8
 
 class Channel:
     def __init__(self, coefficients, noise_mean, noise_variance):
@@ -180,7 +181,32 @@ class Channel:
             cluster_max = from_list[cluster_max][k]
         return y
 
- 
+
+
+def calculate_transition_prob():
+    """
+    Transition probabilities for the 8 clusters w1 -> w8
+    """
+    global transition_prob
+
+    for i in range(clusters):
+        temp = []
+        for j in range(clusters):
+            if (i == 0 or i == 1) and (j == 0 or j == 4):
+                temp.append(0.5)
+            elif (i == 2 or i == 3) and (j == 1 or j == 5):
+                temp.append(0.5)
+            elif (i == 4 or i == 5) and (j == 2 or j == 6):
+                temp.append(0.5)
+            elif (i == 6 or i == 7) and (j == 3 or j == 7):
+                temp.append(0.5)
+            else:
+                temp.append(0)
+        transition_prob.append(temp)
+    
+
+
+
 def read_dataset():
     global TRAIN_DATA, TRAIN_FILE
 
