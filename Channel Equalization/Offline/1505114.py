@@ -16,7 +16,7 @@ n_mean, n_var = 0, 0
 transition_prob = []
 noOfClusters = 8
 received_bits = []
-clusters_means, Prior_Probability, clusters_covariances, h = [], [], [], []
+cluster_means, Prior_Probability, cluster_covariances, h = [], [], [], []
         
 
 def find_transition_prob():
@@ -35,7 +35,7 @@ def find_transition_prob():
         # print(i,start)
         prob[i][start] = 0.5
         prob[i][start+1] = 0.5
-        start = (start+2)%noOfClusters
+        start = (start+2) % noOfClusters
     
     transition_prob = np.array(prob).T.tolist()
     print("Transition Probabilities :")
@@ -59,7 +59,9 @@ def read_dataset():
 
 
 def covar_matrix(list):
-
+    """
+    calculatinf covariance matrix
+    """
     list = np.array(list)
     n = list.shape[0]
     mu = np.mean(list, axis=0)
@@ -104,9 +106,9 @@ def channel(I):
 
 def train(I):
     """
-    docstring
+    Using training sample to determine cluster mean & covariance matrix
     """
-    global h, noOfClusters, transition_prob, n_mean, n_var, clusters_covariances, clusters_means, Prior_Probability
+    global h, noOfClusters, transition_prob, n_mean, n_var, cluster_covariances, cluster_means, Prior_Probability
     
     # generate channel noise usign normal dist.
     noise_list = np.random.normal(n_mean, n_var, len(I))
@@ -142,9 +144,9 @@ def train(I):
 
         # find the mean and covariance matrix for each cluster
         clustersList[j] = np.array(clustersList[j])
-        clusters_means.append(np.mean(clustersList[j], axis=0))
-        clusters_covariances.append(covar_matrix(clustersList[j]))
-        # clusters_covariances.append(np.cov(clustersList[j]))
+        cluster_means.append(np.mean(clustersList[j], axis=0))
+        cluster_covariances.append(covar_matrix(clustersList[j]))
+        # cluster_covariances.append(np.cov(clustersList[j]))
 
     Prior_Probability = [float(x) / float(datasetLen) for x in Prior_Probability]
     print("Found prior probabilities:")
@@ -162,19 +164,20 @@ def multivariate_normal(x, mu, covariance_mat):
     return pdf
     
 
-def cost_function(x, w_after, w_before):
-    global transition_prob, Prior_Probability, clusters_means, clusters_covariances
+def cost_function(x, w_ik, w_ik_1):
+    global transition_prob, Prior_Probability, cluster_means, cluster_covariances
 
-    if transition_prob[w_before][w_after] == 0:
+    if transition_prob[w_ik_1][w_ik] == 0:
         return -INF
-    elif w_before == -1:
-        d = Prior_Probability[w_after] * multivariate_normal(x, clusters_means[w_after], clusters_covariances[w_after])
+    elif w_ik_1 == -1:
+        norm = multivariate_normal(x, cluster_means[w_ik], cluster_covariances[w_ik])
+        d = Prior_Probability[w_ik] * norm
         if d == 0:
             return -INF
         return math.log(d, math.e)
     else:
-        d = transition_prob[w_before][w_after] * multivariate_normal(x, clusters_means[w_after],
-                                                                                clusters_covariances[w_after])
+        norm = multivariate_normal(x, cluster_means[w_ik], cluster_covariances[w_ik])
+        d = transition_prob[w_ik_1][w_ik] * norm
         if d == 0:
             return -INF
         return math.log(d, math.e)
@@ -191,16 +194,18 @@ def D_max(w_ik, x, k, backtrack_lst, D):
     else:
         max_value = D[0][k - 1] + cost_function(x[k], w_ik, 0)
     
-    max_from = 0
+    maxIdx = 0
     for wik_1 in range(1, noOfClusters):
         if D[wik_1][k - 1] == -1:
             value = D_max(wik_1, x, k - 1, backtrack_lst, D) + cost_function(x[k], w_ik, wik_1)
         else:
             value = D[wik_1][k - 1] + cost_function(x[k], w_ik, wik_1)
+        
         if value > max_value:
             max_value = value
-            max_from = wik_1
-    backtrack_lst[w_ik][k] = max_from
+            maxIdx = wik_1
+    
+    backtrack_lst[w_ik][k] = maxIdx
         
     return max_value
 
@@ -225,23 +230,22 @@ def equalizer_method_1(I):
     for k in range(1, len(I)):
         x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
         X.append([x[k], x[k - 1]])
-
         for i in range(noOfClusters):
             D[i][k] = D_max(i, X, k, backtrack_lst, D)
+
 
     max_D = D[0][len(I) - 1]
     maxIdx = 0
     for i in range(1, noOfClusters):
-        D_val = D[i][len(I) - 1]
-        if D_val > max_D:
-            max_D = D_val
+        if D[i][len(I) - 1] > max_D:
+            max_D = D[i][len(I) - 1]
             maxIdx = i
 
-    for k in range(len(I) - 1, 0, -1):
+    for i in range(len(I) - 1, 0, -1):
         if maxIdx in range(4):
-            y[k] = 0
+            y[i] = 0
         else:
-            y[k] = 1
+            y[i] = 1
         maxIdx = backtrack_lst[maxIdx][k]
     
     return y
@@ -295,10 +299,10 @@ def calculate_accuracy(y, out_file):
     count = 0.0
     inferd_string = ""
     
-    for k in range(len(TEST_DATA)):
-        if y[k] == TEST_DATA[k]:
+    for i in range(len(TEST_DATA)):
+        if y[i] == TEST_DATA[i]:
             count += 1.0
-        inferd_string = inferd_string + str(y[k])
+        inferd_string = inferd_string + str(y[i])
 
     f = open(out_file, 'w')
     f.write(inferd_string)
