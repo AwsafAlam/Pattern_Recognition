@@ -5,8 +5,11 @@ import math
 TEST_FILE="test.txt"
 TRAIN_FILE="train.txt"
 PARAMETER_FILE="parameter.txt"
+OUT1="Out1.txt"
+OUT2="Out2.txt"
 TRAIN_DATA = []
 TEST_DATA = []
+INF = 999999999999
 
 mean, variance = 0, 0
 n_mean, n_var = 0, 0
@@ -21,24 +24,24 @@ def find_transition_prob():
     Transition probabilities for the 8 clusters w1 -> w8
     """
     global transition_prob, noOfClusters
-
+    
+    prob = []
     for i in range(noOfClusters):
-        temp = []
-        for j in range(noOfClusters):
-            if (i == 0 or i == 1) and (j == 0 or j == 4):
-                temp.append(0.5)
-            elif (i == 2 or i == 3) and (j == 1 or j == 5):
-                temp.append(0.5)
-            elif (i == 4 or i == 5) and (j == 2 or j == 6):
-                temp.append(0.5)
-            elif (i == 6 or i == 7) and (j == 3 or j == 7):
-                temp.append(0.5)
-            else:
-                temp.append(0)
-        transition_prob.append(temp)
+        arr = [0 for i in range(noOfClusters)]
+        prob.append(arr)
+    
+    start = 0
+    for i in range(noOfClusters):
+        # print(i,start)
+        prob[i][start] = 0.5
+        prob[i][start+1] = 0.5
+        start = (start+2)%noOfClusters
+    
+    transition_prob = np.array(prob).T.tolist()
     print("Transition Probabilities :")
     print(transition_prob)
-    
+
+
 def read_dataset():
     global TRAIN_DATA, TRAIN_FILE
 
@@ -66,6 +69,16 @@ def covar_matrix(data):
         covariance_matrix = covariance_matrix + (temp_t * temp)
     covariance_matrix /= n
     return covariance_matrix
+
+
+def multivariate_normal(x, means, covariance_mat):
+    d = len(x)
+    temp1 = math.sqrt(math.pow(2 * math.pi, d) * math.fabs(np.linalg.det(covariance_mat)))
+    temp2 = np.matrix(x) - np.matrix(means)
+    temp3 = -0.5 * temp2 * np.linalg.inv(covariance_mat) * temp2.transpose()
+    temp4 = math.exp(temp3)
+    result = temp4 / temp1
+    return result
 
 def train(I):
     """
@@ -108,47 +121,138 @@ def train(I):
         clusters_means.append(np.mean(clusters[j], axis=0))
         clusters_covariances.append(covar_matrix(clusters[j]))
 
-    prior_probas = [x / total_datapoints for x in prior_prob]
-    print(prior_probas)
+    prior_prob = [x / total_datapoints for x in prior_prob]
+    print(prior_prob)
+
+def distance_proba(x, w_after, w_before):
+    global transition_prob, prior_prob, clusters_means, clusters_covariances
+    if transition_prob[w_before][w_after] == 0:
+        return -math.inf
+    elif w_before == -1:
+        d = prior_prob[w_after] * multivariate_normal(x, clusters_means[w_after], clusters_covariances[w_after])
+        if d == 0:
+            return -math.inf
+        return math.log(d, math.e)
+    else:
+        d = transition_prob[w_before][w_after] * multivariate_normal(x, clusters_means[w_after],
+                                                                                clusters_covariances[w_after])
+        if d == 0:
+            return -math.inf
+        return math.log(d, math.e)
+
+def D_max(wik, x, k, from_list, D):
+    if k == 1:
+        return distance_proba(x[k], wik, -1)
+    if D[0][k - 1] == -1:
+        max_value = D_max(0, x, k - 1, from_list, D) + distance_proba(x[k], wik, 0)
+    else:
+        max_value = D[0][k - 1] + distance_proba(x[k], wik, 0)
+    max_from = 0
+    for wik_1 in range(1, noOfClusters):
+        if D[wik_1][k - 1] == -1:
+            value = D_max(wik_1, x, k - 1, from_list, D) + distance_proba(x[k], wik, wik_1)
+        else:
+            value = D[wik_1][k - 1] + distance_proba(x[k], wik, wik_1)
+        if value > max_value:
+            max_value = value
+            max_from = wik_1
+    from_list[wik][k] = max_from
+    return max_value
+
+
+def equalizer(X):
+    """
+    Equalizer to obtain output
+    """
+    global h, n_mean, n_var, noOfClusters
     
+    noise_list = np.random.normal(n_mean, n_var, len(X))
+
+    x = len(X)*[0]
+    y = len(X)*[0]
+    X = [0]
+
+    D = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
+    from_list = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
+
+    for k in range(1, len(I)):
+        x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
+        X.append([x[k], x[k - 1]])
+
+        for i in range(noOfClusters):
+            D[i][k] = D_max(i, X, k, from_list, D)
+
+    D_max = D[0][len(I) - 1]
+    cluster_max = 0
+    for i in range(1, noOfClusters):
+        D_val = D[i][len(I) - 1]
+        if D_val > D_max:
+            D_max = D_val
+            cluster_max = i
+
+    for k in range(len(I) - 1, 0, -1):
+        if cluster_max in range(4):
+            y[k] = 0
+        else:
+            y[k] = 1
+        cluster_max = from_list[cluster_max][k]
+    return y
+
 
 def test():
     """
-    docstring
+    Test file
     """
-    f = open(TEST_FILE, 'r')
-    str = f.readline()
+    global TEST_FILE, TEST_DATA
+
+    file = open(TEST_FILE, 'r')
+    str = file.readline()
     
-    a_list=[] 
-    a_list[:0]= str
-    map_object = map(int, a_list)
+    temp = []
+    temp[:0]= str
+    map_object = map(int, temp)
 
-    list_of_integers = list(map_object)
+    TEST_DATA = list(map_object)
+    print(TEST_DATA)
+    y = equalizer(TEST_DATA)
+    calculate_accuracy(y, OUT1)
 
-    pass
+    
 
 
-def calculate_accuracy():
+def calculate_accuracy(y, out_file):
     """
     test data accuracy
     """
-    pass
+    global TEST_DATA
+    total_accurate = 0.0
+    total = len(TEST_DATA) - 1
+    output_bit_string = ""
+    for k in range(1, len(TEST_DATA)):
+        if y[k] == TEST_DATA[k]:
+            total_accurate += 1.0
+        output_bit_string = output_bit_string + str(y[k])
+    file = open(out_file, 'w')
+    file.write(output_bit_string)
+    file.close()
+
+    print("Accuracy = " + str(total_accurate*100/total))
+
 
 
 if __name__ == "__main__":
     
     f = open(PARAMETER_FILE, 'r')
     h = list(map(float, f.readline().split()))
-    variance = f.readline()
+    n_var = int(f.readline())
     f.close()
-    print(h,variance)
+    print(h,n_var)
 
     print("Starting channel equalization")
     I = read_dataset()
-    # Defining the states (e.g., clusters along with their centroids). 
-    # hi’s and n and l indicate their number.
-
+    
     # Determining the prior and transition probabilities
     find_transition_prob()
     train(I)
+    test()
 
