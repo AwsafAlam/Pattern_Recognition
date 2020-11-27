@@ -80,6 +80,29 @@ def multivariate_normal(x, means, covariance_mat):
     result = temp4 / temp1
     return result
 
+def channel(I):
+    """
+    Pass through channel
+    """
+    global h, n_mean, n_var, noOfClusters
+
+    noise_list = np.random.normal(n_mean, n_var, len(I))
+    x = len(I)*[0]
+    clusters = [[] for i in range(noOfClusters)]
+
+    for k in range(1, len(I)):
+        if k == 1:
+            x[k] = h[0] * I[k] + noise_list[k]
+            cluster_no = I[k]*4
+        else:
+            x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
+            cluster_no = I[k]*4 + I[k - 1]*2 + I[k - 2]*1
+
+        clusters[cluster_no].append([x[k], x[k - 1]])
+
+    return x
+
+
 def train(I):
     """
     docstring
@@ -160,16 +183,16 @@ def D_max(wik, x, k, from_list, D):
     return max_value
 
 
-def equalizer(X):
+def equalizer(I):
     """
     Equalizer to obtain output
     """
     global h, n_mean, n_var, noOfClusters
     
-    noise_list = np.random.normal(n_mean, n_var, len(X))
+    noise_list = np.random.normal(n_mean, n_var, len(I))
 
-    x = len(X)*[0]
-    y = len(X)*[0]
+    x = len(I)*[0]
+    y = len(I)*[0]
     X = [0]
 
     D = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
@@ -182,12 +205,12 @@ def equalizer(X):
         for i in range(noOfClusters):
             D[i][k] = D_max(i, X, k, from_list, D)
 
-    D_max = D[0][len(I) - 1]
+    max = D[0][len(I) - 1]
     cluster_max = 0
     for i in range(1, noOfClusters):
         D_val = D[i][len(I) - 1]
-        if D_val > D_max:
-            D_max = D_val
+        if D_val > max:
+            max = D_val
             cluster_max = i
 
     for k in range(len(I) - 1, 0, -1):
