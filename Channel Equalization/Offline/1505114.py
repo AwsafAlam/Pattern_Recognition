@@ -167,29 +167,29 @@ def distance_proba(x, w_after, w_before):
         return math.log(d, math.e)
 
 
-def D_max(wik, x, k, from_list, D):
+def D_max(w_ik, x, k, from_list, D):
     if k == 1:
-        return distance_proba(x[k], wik, -1)
+        return distance_proba(x[k], w_ik, -1)
     if D[0][k - 1] == -1:
-        max_value = D_max(0, x, k - 1, from_list, D) + distance_proba(x[k], wik, 0)
+        max_value = D_max(0, x, k - 1, from_list, D) + distance_proba(x[k], w_ik, 0)
     else:
-        max_value = D[0][k - 1] + distance_proba(x[k], wik, 0)
+        max_value = D[0][k - 1] + distance_proba(x[k], w_ik, 0)
     max_from = 0
     for wik_1 in range(1, noOfClusters):
         if D[wik_1][k - 1] == -1:
-            value = D_max(wik_1, x, k - 1, from_list, D) + distance_proba(x[k], wik, wik_1)
+            value = D_max(wik_1, x, k - 1, from_list, D) + distance_proba(x[k], w_ik, wik_1)
         else:
-            value = D[wik_1][k - 1] + distance_proba(x[k], wik, wik_1)
+            value = D[wik_1][k - 1] + distance_proba(x[k], w_ik, wik_1)
         if value > max_value:
             max_value = value
             max_from = wik_1
-    from_list[wik][k] = max_from
+    from_list[w_ik][k] = max_from
     return max_value
 
 
-def equalizer(I):
+def equalizer_method_1(I):
     """
-    Equalizer to obtain output
+    Equalizer to obtain output using the vitterbi Algo
     """
     global h, n_mean, n_var, noOfClusters
     
@@ -199,6 +199,7 @@ def equalizer(I):
     y = len(I)*[0]
     X = [0]
 
+    # Initialize D
     D = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
     from_list = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
 
@@ -209,23 +210,28 @@ def equalizer(I):
         for i in range(noOfClusters):
             D[i][k] = D_max(i, X, k, from_list, D)
 
-    max = D[0][len(I) - 1]
-    cluster_max = 0
+    max_D = D[0][len(I) - 1]
+    maxIdx = 0
     for i in range(1, noOfClusters):
         D_val = D[i][len(I) - 1]
-        if D_val > max:
-            max = D_val
-            cluster_max = i
+        if D_val > max_D:
+            max_D = D_val
+            maxIdx = i
 
     for k in range(len(I) - 1, 0, -1):
-        if cluster_max in range(4):
+        if maxIdx in range(4):
             y[k] = 0
         else:
             y[k] = 1
-        cluster_max = from_list[cluster_max][k]
+        maxIdx = from_list[maxIdx][k]
+    
     return y
 
-
+def equalizer_method_2(I):
+    """
+    Using euclidean distances only
+    """
+    pass
 def read_test_data():
     """
     read test data
@@ -282,6 +288,8 @@ if __name__ == "__main__":
     find_transition_prob()
     train(I)
     test_data = read_test_data()
-    y = equalizer(test_data)
+    y = equalizer_method_1(test_data)
     calculate_accuracy(y, OUT1)
 
+    y = equalizer_method_2(test_data)
+    calculate_accuracy(y, OUT2)
