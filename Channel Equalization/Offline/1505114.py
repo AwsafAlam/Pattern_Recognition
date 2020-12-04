@@ -12,7 +12,7 @@ TEST_DATA = []
 INF = 999999999999
 
 mean, variance = 0, 0
-n_mean, n_var = 0, 0
+n_mean, n_var = 0, 0.0
 transition_prob = []
 noOfClusters = 8
 received_bits = []
@@ -317,7 +317,7 @@ if __name__ == "__main__":
     
     f = open(PARAMETER_FILE, 'r')
     h = list(map(float, f.readline().split()))
-    n_var = int(f.readline())
+    n_var = float(f.readline())
     f.close()
     print(h,n_var)
 
