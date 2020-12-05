@@ -12,7 +12,7 @@ TEST_DATA = []
 INF = 999999999999
 
 mean, variance = 0, 0
-n_mean, n_var = 0, 0.0
+n_mean, n_var = 0, 0
 transition_prob = []
 noOfClusters = 8
 received_bits = []
