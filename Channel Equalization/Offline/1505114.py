@@ -124,6 +124,7 @@ def train(I):
             idx = I[k]*4
         else:
             x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
+            # convert binary to decimal
             sum = 0
             for i in range(3):
                 sum += I[k + i - 2] * math.pow(2,i)
@@ -137,7 +138,7 @@ def train(I):
 
     datasetLen = 0.0
     for j in range(noOfClusters):
-        print("For cluster {}".format(j))
+        print("For cluster {} - length: {}".format(j, len(clustersList[j])))
         bits_per_cluster = len(clustersList[j])
         datasetLen += bits_per_cluster
         Prior_Probability.append(bits_per_cluster)
