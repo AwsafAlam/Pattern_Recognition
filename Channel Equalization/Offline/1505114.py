@@ -60,7 +60,7 @@ def read_dataset():
 
 def covar_matrix(list):
     """
-    calculatinf covariance matrix
+    calculate covariance matrix
     """
     list = np.array(list)
     n = list.shape[0]
