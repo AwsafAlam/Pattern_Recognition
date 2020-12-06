@@ -208,7 +208,7 @@ def D_max(clusterNo, x, k, backtrack_lst, D):
             max_value = value
             maxIdx = c
     
-    backtrack_lst[w_ik][k] = maxIdx
+    backtrack_lst[clusterNo][k] = maxIdx
         
     return max_value
 
@@ -245,6 +245,7 @@ def equalizer_method_1(I):
             max_D = D[i][len(I) - 1]
             maxIdx = i
 
+    # iterating in reverse
     for i in range(len(I) - 1, 0, -1):
         if maxIdx in range(4):
             y[i] = 0
