@@ -183,28 +183,30 @@ def cost_function(x, w_ik, w_ik_1):
             return -INF
         return np.log10(d)
 
+def Euclidean(i, X, k, backtrack_lst, D):
+    pass
 
-def D_max(w_ik, x, k, backtrack_lst, D):
+def D_max(clusterNo, x, k, backtrack_lst, D):
     """
     Recursive function for calculating the distance matrix for DP
     """
     if k == 1:
-        return cost_function(x[k], w_ik, -1)
+        return cost_function(x[k], clusterNo, -1)
     if D[0][k - 1] == -1:
-        max_value = D_max(0, x, k - 1, backtrack_lst, D) + cost_function(x[k], w_ik, 0)
+        max_value = D_max(0, x, k - 1, backtrack_lst, D) + cost_function(x[k], clusterNo, 0)
     else:
-        max_value = D[0][k - 1] + cost_function(x[k], w_ik, 0)
+        max_value = D[0][k - 1] + cost_function(x[k], clusterNo, 0)
     
     maxIdx = 0
-    for wik_1 in range(1, noOfClusters):
-        if D[wik_1][k - 1] == -1:
-            value = D_max(wik_1, x, k - 1, backtrack_lst, D) + cost_function(x[k], w_ik, wik_1)
+    for c in range(1, noOfClusters):
+        if D[c][k - 1] == -1:
+            value = D_max(c, x, k - 1, backtrack_lst, D) + cost_function(x[k], clusterNo, c)
         else:
-            value = D[wik_1][k - 1] + cost_function(x[k], w_ik, wik_1)
+            value = D[c][k - 1] + cost_function(x[k], clusterNo, c)
         
         if value > max_value:
             max_value = value
-            maxIdx = wik_1
+            maxIdx = c
     
     backtrack_lst[w_ik][k] = maxIdx
         
@@ -231,10 +233,11 @@ def equalizer_method_1(I):
     for k in range(1, len(I)):
         x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
         X.append([x[k], x[k - 1]])
+        # print(X)
         for i in range(noOfClusters):
             D[i][k] = D_max(i, X, k, backtrack_lst, D)
 
-
+    # inference step
     max_D = D[0][len(I) - 1]
     maxIdx = 0
     for i in range(1, noOfClusters):
@@ -247,7 +250,7 @@ def equalizer_method_1(I):
             y[i] = 0
         else:
             y[i] = 1
-        maxIdx = backtrack_lst[maxIdx][k]
+        maxIdx = backtrack_lst[maxIdx][i]
     
     return y
 
