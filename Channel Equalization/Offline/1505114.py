@@ -183,8 +183,36 @@ def cost_function(x, w_ik, w_ik_1):
             return -INF
         return np.log10(d)
 
-def Euclidean(i, X, k, backtrack_lst, D):
-    pass
+
+def euc_cost_function(xk, clusterNo, flag):
+    global cluster_means
+
+    return abs(xk - cluster_means[clusterNo]) 
+
+
+def Euclidean(clusterNo, x, k, backtrack_lst, D):
+    if k == 1:
+        return euc_cost_function(x[k], clusterNo, -1)
+    if D[0][k - 1] == -1:
+        max_value = D_max(0, x, k - 1, backtrack_lst, D) + euc_cost_function(x[k], clusterNo, 0)
+    else:
+        max_value = D[0][k - 1] + euc_cost_function(x[k], clusterNo, 0)
+    
+    maxIdx = 0
+    for c in range(1, noOfClusters):
+        if D[c][k - 1] == -1:
+            value = D_max(c, x, k - 1, backtrack_lst, D) + euc_cost_function(x[k], clusterNo, c)
+        else:
+            value = D[c][k - 1] + euc_cost_function(x[k], clusterNo, c)
+        
+        if value > max_value:
+            max_value = value
+            maxIdx = c
+    
+    backtrack_lst[clusterNo][k] = maxIdx
+        
+    return max_value
+
 
 def D_max(clusterNo, x, k, backtrack_lst, D):
     """
@@ -237,7 +265,6 @@ def equalizer_method_1(I):
         for i in range(noOfClusters):
             D[i][k] = D_max(i, X, k, backtrack_lst, D)
 
-    # inference step
     max_D = D[0][len(I) - 1]
     maxIdx = 0
     for i in range(1, noOfClusters):
@@ -260,20 +287,41 @@ def equalizer_method_2(I):
     """
     Using euclidean distances only
     """
-    global h, n_mean, n_var, noOfClusters, received_bits
+    global h, n_mean, n_var, noOfClusters
     
-    x = received_bits
+    noise_list = np.random.normal(n_mean, n_var, len(I))
+
+    # x = channel(I)
+    x = [0 for _ in range(len(I))]
     y = [0 for _ in range(len(I))]
     X = [0]
 
     # Initialize D and backtracking path
     D = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
+    backtrack_lst = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
 
     for k in range(1, len(I)):
+        x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
         X.append([x[k], x[k - 1]])
+        # print(X)
+        for i in range(noOfClusters):
+            D[i][k] = Euclidean(i, X, k, backtrack_lst, D)
 
-        # for i in range(noOfClusters):
-        #     D[i][k] = Euclidean(i, X, k, backtrack_lst, D)
+    max_D = D[0][len(I) - 1]
+    maxIdx = 0
+    for i in range(1, noOfClusters):
+        if D[i][len(I) - 1] > max_D:
+            max_D = D[i][len(I) - 1]
+            maxIdx = i
+
+    # iterating in reverse
+    for i in range(len(I) - 1, 0, -1):
+        if maxIdx in range(4):
+            y[i] = 0
+        else:
+            y[i] = 1
+        maxIdx = backtrack_lst[maxIdx][i]
+    
     return y
 
 
@@ -334,8 +382,14 @@ if __name__ == "__main__":
     train(I)
     test_data = read_test_data()
 
-    y = equalizer_method_1(test_data)
-    calculate_accuracy(y, OUT1)
+    y1 = equalizer_method_1(test_data)
+    calculate_accuracy(y1, OUT1)
 
-    # y = equalizer_method_2(test_data)
-    # calculate_accuracy(y, OUT2)
+    # y2 = equalizer_method_2(test_data)
+    # calculate_accuracy(y2, OUT2)
+
+    # if y1 == y2:
+    #     print("Matched")
+    # else:
+    #     print("Didn't Match")
+
