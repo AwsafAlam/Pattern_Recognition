@@ -12,7 +12,7 @@ TEST_DATA = []
 INF = 999999999999
 
 mean, variance = 0, 0
-n_mean, n_var = 0, 0.0
+n_mean, n_var = 0, 0
 transition_prob = []
 noOfClusters = 8
 received_bits = []
@@ -60,7 +60,7 @@ def read_dataset():
 
 def covar_matrix(list):
     """
-    calculatinf covariance matrix
+    calculate covariance matrix
     """
     list = np.array(list)
     n = list.shape[0]
@@ -124,6 +124,7 @@ def train(I):
             idx = I[k]*4
         else:
             x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
+            # convert binary to decimal
             sum = 0
             for i in range(3):
                 sum += I[k + i - 2] * math.pow(2,i)
@@ -137,7 +138,7 @@ def train(I):
 
     datasetLen = 0.0
     for j in range(noOfClusters):
-        print("For cluster {}".format(j))
+        print("For cluster {} - length: {}".format(j, len(clustersList[j])))
         bits_per_cluster = len(clustersList[j])
         datasetLen += bits_per_cluster
         Prior_Probability.append(bits_per_cluster)
@@ -174,38 +175,68 @@ def cost_function(x, w_ik, w_ik_1):
         d = Prior_Probability[w_ik] * norm
         if d == 0:
             return -INF
-        return math.log(d, math.e)
+        return np.log10(d)
     else:
         norm = multivariate_normal(x, cluster_means[w_ik], cluster_covariances[w_ik])
         d = transition_prob[w_ik_1][w_ik] * norm
         if d == 0:
             return -INF
-        return math.log(d, math.e)
+        return np.log10(d)
 
 
-def D_max(w_ik, x, k, backtrack_lst, D):
+def euc_cost_function(xk, clusterNo, flag):
+    global cluster_means
+
+    return abs(xk - cluster_means[clusterNo]) 
+
+
+def Euclidean(clusterNo, x, k, backtrack_lst, D):
+    if k == 1:
+        return euc_cost_function(x[k], clusterNo, -1)
+    if D[0][k - 1] == -1:
+        max_value = D_max(0, x, k - 1, backtrack_lst, D) + euc_cost_function(x[k], clusterNo, 0)
+    else:
+        max_value = D[0][k - 1] + euc_cost_function(x[k], clusterNo, 0)
+    
+    maxIdx = 0
+    for c in range(1, noOfClusters):
+        if D[c][k - 1] == -1:
+            value = D_max(c, x, k - 1, backtrack_lst, D) + euc_cost_function(x[k], clusterNo, c)
+        else:
+            value = D[c][k - 1] + euc_cost_function(x[k], clusterNo, c)
+        
+        if value > max_value:
+            max_value = value
+            maxIdx = c
+    
+    backtrack_lst[clusterNo][k] = maxIdx
+        
+    return max_value
+
+
+def D_max(clusterNo, x, k, backtrack_lst, D):
     """
     Recursive function for calculating the distance matrix for DP
     """
     if k == 1:
-        return cost_function(x[k], w_ik, -1)
+        return cost_function(x[k], clusterNo, -1)
     if D[0][k - 1] == -1:
-        max_value = D_max(0, x, k - 1, backtrack_lst, D) + cost_function(x[k], w_ik, 0)
+        max_value = D_max(0, x, k - 1, backtrack_lst, D) + cost_function(x[k], clusterNo, 0)
     else:
-        max_value = D[0][k - 1] + cost_function(x[k], w_ik, 0)
+        max_value = D[0][k - 1] + cost_function(x[k], clusterNo, 0)
     
     maxIdx = 0
-    for wik_1 in range(1, noOfClusters):
-        if D[wik_1][k - 1] == -1:
-            value = D_max(wik_1, x, k - 1, backtrack_lst, D) + cost_function(x[k], w_ik, wik_1)
+    for c in range(1, noOfClusters):
+        if D[c][k - 1] == -1:
+            value = D_max(c, x, k - 1, backtrack_lst, D) + cost_function(x[k], clusterNo, c)
         else:
-            value = D[wik_1][k - 1] + cost_function(x[k], w_ik, wik_1)
+            value = D[c][k - 1] + cost_function(x[k], clusterNo, c)
         
         if value > max_value:
             max_value = value
-            maxIdx = wik_1
+            maxIdx = c
     
-    backtrack_lst[w_ik][k] = maxIdx
+    backtrack_lst[clusterNo][k] = maxIdx
         
     return max_value
 
@@ -230,9 +261,9 @@ def equalizer_method_1(I):
     for k in range(1, len(I)):
         x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
         X.append([x[k], x[k - 1]])
+        # print(X)
         for i in range(noOfClusters):
             D[i][k] = D_max(i, X, k, backtrack_lst, D)
-
 
     max_D = D[0][len(I) - 1]
     maxIdx = 0
@@ -241,12 +272,13 @@ def equalizer_method_1(I):
             max_D = D[i][len(I) - 1]
             maxIdx = i
 
+    # iterating in reverse
     for i in range(len(I) - 1, 0, -1):
         if maxIdx in range(4):
             y[i] = 0
         else:
             y[i] = 1
-        maxIdx = backtrack_lst[maxIdx][k]
+        maxIdx = backtrack_lst[maxIdx][i]
     
     return y
 
@@ -255,20 +287,41 @@ def equalizer_method_2(I):
     """
     Using euclidean distances only
     """
-    global h, n_mean, n_var, noOfClusters, received_bits
+    global h, n_mean, n_var, noOfClusters
     
-    x = received_bits
+    noise_list = np.random.normal(n_mean, n_var, len(I))
+
+    # x = channel(I)
+    x = [0 for _ in range(len(I))]
     y = [0 for _ in range(len(I))]
     X = [0]
 
     # Initialize D and backtracking path
     D = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
+    backtrack_lst = [[-1 for _ in range(len(x))] for _ in range(noOfClusters)]
 
     for k in range(1, len(I)):
+        x[k] = h[0]*I[k] + h[1]*I[k - 1] + noise_list[k]
         X.append([x[k], x[k - 1]])
+        # print(X)
+        for i in range(noOfClusters):
+            D[i][k] = Euclidean(i, X, k, backtrack_lst, D)
 
-        # for i in range(noOfClusters):
-        #     D[i][k] = Euclidean(i, X, k, backtrack_lst, D)
+    max_D = D[0][len(I) - 1]
+    maxIdx = 0
+    for i in range(1, noOfClusters):
+        if D[i][len(I) - 1] > max_D:
+            max_D = D[i][len(I) - 1]
+            maxIdx = i
+
+    # iterating in reverse
+    for i in range(len(I) - 1, 0, -1):
+        if maxIdx in range(4):
+            y[i] = 0
+        else:
+            y[i] = 1
+        maxIdx = backtrack_lst[maxIdx][i]
+    
     return y
 
 
@@ -329,8 +382,14 @@ if __name__ == "__main__":
     train(I)
     test_data = read_test_data()
 
-    y = equalizer_method_1(test_data)
-    calculate_accuracy(y, OUT1)
+    y1 = equalizer_method_1(test_data)
+    calculate_accuracy(y1, OUT1)
 
-    # y = equalizer_method_2(test_data)
-    # calculate_accuracy(y, OUT2)
+    # y2 = equalizer_method_2(test_data)
+    # calculate_accuracy(y2, OUT2)
+
+    # if y1 == y2:
+    #     print("Matched")
+    # else:
+    #     print("Didn't Match")
+
