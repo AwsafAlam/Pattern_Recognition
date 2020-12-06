@@ -175,13 +175,13 @@ def cost_function(x, w_ik, w_ik_1):
         d = Prior_Probability[w_ik] * norm
         if d == 0:
             return -INF
-        return math.log(d, math.e)
+        return np.log10(d)
     else:
         norm = multivariate_normal(x, cluster_means[w_ik], cluster_covariances[w_ik])
         d = transition_prob[w_ik_1][w_ik] * norm
         if d == 0:
             return -INF
-        return math.log(d, math.e)
+        return np.log10(d)
 
 
 def D_max(w_ik, x, k, backtrack_lst, D):
