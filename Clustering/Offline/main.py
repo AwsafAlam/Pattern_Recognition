@@ -6,9 +6,9 @@ import queue
 import collections
 import pandas as pd
 
-
+training_files = ["bisecting.txt","blobs.txt","moons.txt"]
 INPUT_FILE="blobs.txt"
-ITERATIONS=10
+ITERATIONS=20
 #Define label for differnt point group
 NOISE = 0
 UNASSIGNED = 0
@@ -18,19 +18,19 @@ EDGE_PT = -2
 dataset = []
 noOfClusters = 0
 
-def read_dataset():
+def read_dataset(INPUT_FILE):
 	"""
 	Reading dataset
 	"""
-	global INPUT_FILE, dataset
+	global dataset
 	f = open(INPUT_FILE, "r")
 	lines = f.readlines()
 	
 	for i in range(len(lines)):
 		data = lines[i].split()
 		dataset.append(list(map(float, data)))
-	# print(data)
 
+	print("Total dataset = {} points".format(len(dataset)))
 	f.close()
 	pass
 
@@ -44,9 +44,10 @@ def find_nearest_neighbour(k):
 	distances, indices = nearest_neighbors.kneighbors(dataset)
 	distances = np.sort(distances, axis=0)[:, 1]
 	# print(distances, indices)
+	plt.grid()
 	plt.plot(distances)
-	plt.savefig(INPUT_FILE+'_Nearest_Neighbour.png')
-	# plt.show()
+	# plt.savefig(INPUT_FILE+'_Nearest_Neighbour.png')
+	plt.show()
 
 def plotClusters(dataset, labels, noOfClusters, file):
 	total_points = len(dataset)
@@ -54,7 +55,9 @@ def plotClusters(dataset, labels, noOfClusters, file):
 	plt.figure()
 
 	# Color array for clusters
-	scatterColors = ['black', 'green', 'brown', 'red', 'purple', 'orange', 'yellow']
+	scatterColors = ["blue","green","red","cyan","brown","purple","indigo", "pink", "royalblue",
+									"orange","yellow","black","olive", "gold", "orangered", "skyblue", "teal" ]
+
 	for i in range(noOfClusters):
 		if (i==0):
 			#Plot all noise point as blue
@@ -69,8 +72,9 @@ def plotClusters(dataset, labels, noOfClusters, file):
 				y.append(dataset[j][1])
 		plt.scatter(x, y, c=color, alpha=1, marker='.')
 	
-	# plt.show()
+	plt.grid()
 	plt.savefig(file)
+	# plt.show()
 
 def euclidean_dist(point1, point2):
 	"""
@@ -162,63 +166,6 @@ def dbscan(data, Eps, MinPt):
 	noOfClusters = cluster_no
 	return pointlabel
 
-
-def calc_distance(X1, X2):
-	return(sum((X1 - X2)**2))**0.5
-
-def findClosestCentroids(ic, X):
-	assigned_centroid = []
-	for i in X:
-		distance=[]
-		for j in ic:
-			distance.append(calc_distance(i, j))
-		assigned_centroid.append(np.argmin(distance))
-	return assigned_centroid
-
-def calc_centroids(clusters, X):
-	new_centroids = []
-	new_df = pd.concat([pd.DataFrame(X), pd.DataFrame(clusters, columns=['cluster'])],
-						axis=1)
-	for c in set(new_df['cluster']):
-		current_cluster = new_df[new_df['cluster'] == c][new_df.columns[:-1]]
-		cluster_mean = current_cluster.mean(axis=0)
-		new_centroids.append(cluster_mean)
-	return new_centroids
-
-def k_means(k):
-	"""
-	1. Initialize centroids – This is done by randomly choosing K no of points, the points can be present in the dataset or also random points.
-	2. Assign Clusters – The clusters are assigned to each point in the dataset by calculating their distance from the centroid and assigning it to the centroid with minimum distance.
-	3. Re-calculate the centroids – Updating the centroid by calculating the centroid of each cluster we have created.
-	"""
-	global dataset
-	X = np.array(dataset)
-
-	init_centroids = random.sample(range(0, len(dataset)), k)
-
-	centroids = []
-	for i in init_centroids:
-		centroids.append(dataset[i])
-	print(centroids)
-
-	# converting to 2D - array
-	centroids = np.array(centroids)
-	get_centroids = findClosestCentroids(centroids, X)
-
-	prev_centr = []
-	for i in range(ITERATIONS):
-		get_centroids = findClosestCentroids(centroids, X)
-		centroids = calc_centroids(get_centroids, X)
-		# print(centroids)
-
-	plotClusters(dataset, centroids, k, INPUT_FILE+'_k_means.png')
-	# plt.figure()
-	# plt.scatter(np.array(centroids)[:, 0], np.array(centroids)[:, 1], color='black')
-	# plt.scatter(X[:, 0], X[:, 1], alpha=0.1)
-	# plt.savefig(INPUT_FILE+'_k_means.png')
-	# plt.show()
-
-
 def DBSCAN_start(eps, minpts):
 	"""
 	docstring
@@ -231,25 +178,105 @@ def DBSCAN_start(eps, minpts):
 	plotClusters(dataset, labels, noOfClusters, INPUT_FILE+'_DBSCAN.png')
 	outliers  = labels.count(0)
 
-	print("No. of Clusters: {}".format(noOfClusters))
+	print("No. of Clusters: {}".format(noOfClusters-1))
 	print("Outliers: {}".format(outliers))
 	
-	return noOfClusters
+	return noOfClusters - 1
+
+
+def calc_distance(X1, X2):
+	return (sum((X1 - X2)**2))**0.5
+
+def assign_clusters(centroids, X):
+	assigned_cluster = []
+	for i in X:
+		distance=[]
+		for j in centroids:
+			distance.append(calc_distance(i, j))
+		# print(distance)
+		# print(np.argmin(distance))
+		# print("--------------------------------")
+		assigned_cluster.append(np.argmin(distance)) # idx of minimum element
+		# print(assigned_cluster)
+	return assigned_cluster
+
+
+def calc_centroids(clusters_lables, k):
+	global dataset
+	points_per_cluster = [[] for _ in range(k)]
+	for i in range(len(clusters_lables)):
+		points_per_cluster[clusters_lables[i]].append(dataset[i])
+	
+	centroids = []
+	for i in range(k):
+		centroids.append(np.mean(points_per_cluster[i], axis=0))
+
+	return centroids
+
+def match_centroids(c_new, c_old):
+	return (np.array(c_new) == np.array(c_old)).all()
+
+
+def k_means(k):
+	"""
+	1. Initialize centroids – This is done by randomly choosing K no of points, the points can be present in the dataset or also random points.
+	2. Assign Clusters – The clusters are assigned to each point in the dataset by calculating their distance from the centroid and assigning it to the centroid with minimum distance.
+	3. Re-calculate the centroids – Updating the centroid by calculating the centroid of each cluster we have created.
+	"""
+	global dataset
+
+	print("Running k-Means for {} clusters..".format(k))
+	X = np.array(dataset)
+
+	init_centroids = random.sample(range(0, len(dataset)), k)
+
+	centroids, cluster_labels = [], []
+	for i in init_centroids:
+		centroids.append(dataset[i])
+	
+	# converting to 2D - array
+	# centroids = np.array(centroids)
+	# get_centroids = assign_clusters(centroids, X)
+
+	prev_centroids = centroids.copy()
+	for i in range(ITERATIONS):
+		print("For iteration {}: ".format(i))
+		prev_centroids = np.array(prev_centroids)
+		cluster_labels = assign_clusters(prev_centroids, X)
+		centroids = calc_centroids(cluster_labels, k)
+		
+		# print(prev_centroids)
+		print(centroids)
+		if match_centroids(centroids,prev_centroids):
+			print("Converged ...")
+			break
+		else:
+			prev_centroids = centroids.copy()
+			
+	plotClusters(dataset, cluster_labels, k, INPUT_FILE+'_k_means.png')
+	
 
 if __name__ == "__main__":
 	
-	print("Reading file")
-	read_dataset()
-	find_nearest_neighbour(4)
-	
-	#Set EPS and Minpoint
-	epss = [5]
-	minptss = [5]
+	print("Choose Training file...")
+	for i, item in enumerate(training_files, start=1):
+		print(i,item)
+	choice = int(input())
+	INPUT_FILE=training_files[choice-1]
+	read_dataset(INPUT_FILE)
+	print("1. Plot k Nearest Neighbours\n2. Run Clustering Algorithms")
+	choice = int(input())
+	if choice == 1:
+		print("Enter the value of k:")
+		k = int(input())
+		find_nearest_neighbour(k)
+	else:
+		print("Enter EPS value:")
+		eps = float(input())
 
-	k = 0
-	# Find ALl cluster, outliers in different setting and print resultsw
-	for eps in epss:
-		for minpts in minptss:
-			k = DBSCAN_start(eps, minpts)
+		print("Enter Minpts value:")
+		minpts = int(input())
+		
+		k = DBSCAN_start(eps, minpts)
+		k_means(k)
 
-	k_means(k)
