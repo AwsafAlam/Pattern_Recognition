@@ -1,123 +1,282 @@
 import numpy as np
-import collections
+import random
+from sklearn.neighbors import NearestNeighbors
 import matplotlib.pyplot as plt
 import queue
-import scipy.io as spio
+import collections
+import pandas as pd
 
+training_files = ["bisecting.txt","blobs.txt","moons.txt"]
+INPUT_FILE="blobs.txt"
+ITERATIONS=20
 #Define label for differnt point group
 NOISE = 0
 UNASSIGNED = 0
-core=-1
-edge=-2
+CORE_PT = -1
+EDGE_PT = -2
 
-#function to find all neigbor points in radius
-def neighbor_points(data, pointId, radius):
-    points = []
-    for i in range(len(data)):
-        #Euclidian distance using L2 Norm
-        if np.linalg.norm(data[i] - data[pointId]) <= radius:
-            points.append(i)
-    return points
+dataset = []
+noOfClusters = 0
 
-#DB Scan algorithom
+def read_dataset(INPUT_FILE):
+	"""
+	Reading dataset
+	"""
+	global dataset
+	f = open(INPUT_FILE, "r")
+	lines = f.readlines()
+	
+	for i in range(len(lines)):
+		data = lines[i].split()
+		dataset.append(list(map(float, data)))
+
+	print("Total dataset = {} points".format(len(dataset)))
+	f.close()
+	pass
+
+def find_nearest_neighbour(k):
+	"""
+	Nearest neighbour
+	"""
+	global dataset
+	nearest_neighbors = NearestNeighbors(n_neighbors=k)
+	nearest_neighbors.fit(dataset)
+	distances, indices = nearest_neighbors.kneighbors(dataset)
+	distances = np.sort(distances, axis=0)[:, 1]
+	# print(distances, indices)
+	plt.grid()
+	plt.plot(distances)
+	# plt.savefig(INPUT_FILE+'_Nearest_Neighbour.png')
+	plt.show()
+
+def plotClusters(dataset, labels, noOfClusters, file):
+	total_points = len(dataset)
+	print("Plotting for {} points".format(total_points))
+	plt.figure()
+
+	# Color array for clusters
+	scatterColors = ["blue","green","red","cyan","brown","purple","indigo", "pink", "royalblue",
+									"orange","yellow","black","olive", "gold", "orangered", "skyblue", "teal" ]
+
+	for i in range(noOfClusters):
+		if (i==0):
+			#Plot all noise point as blue
+			color='blue'
+		else:
+			color = scatterColors[i % len(scatterColors)]
+		
+		x = [];  y = []
+		for j in range(total_points):
+			if labels[j] == i:
+				x.append(dataset[j][0])
+				y.append(dataset[j][1])
+		plt.scatter(x, y, c=color, alpha=1, marker='.')
+	
+	plt.grid()
+	plt.savefig(file)
+	# plt.show()
+
+def euclidean_dist(point1, point2):
+	"""
+		Euclid distance function
+	"""
+	x1 = point1[0]
+	x2 = point2[0]
+	y1 = point1[1]
+	y2 = point2[1]
+	# create the points
+	p1 = (x1 - x2)**2
+	p2 = (y1 - y2)**2
+	return np.sqrt(p1 + p2)
+
+def neighbor_points(dataset, pointIdx, radius):
+	'''
+	find all neigbor points in radius from a given point.
+	'''
+	points = []
+	for i in range(len(dataset)):
+		# Calculating distance btn points
+		if euclidean_dist(dataset[i], dataset[pointIdx]) <= radius:
+			points.append(i)
+	return points
+
 def dbscan(data, Eps, MinPt):
-    #initilize all pointlable to unassign
-    pointlabel  = [UNASSIGNED] * len(data)
-    pointcount = []
-    #initilize list for core/noncore point
-    corepoint=[]
-    noncore=[]
-    
-    #Find all neigbor for all point
-    for i in range(len(data)):
-        pointcount.append(neighbor_points(train,i,Eps))
-    
-    #Find all core point, edgepoint and noise
-    for i in range(len(pointcount)):
-        if (len(pointcount[i])>=MinPt):
-            pointlabel[i]=core
-            corepoint.append(i)
-        else:
-            noncore.append(i)
+	'''
+	- Eliminate noise points
+	- Perform clustering on the remaining points
+		> Put an edge between all core points which are within Eps
+		> Make each group of core points as a cluster
+		> Assign border point to one of the clusters of its associated core points
 
-    for i in noncore:
-        for j in pointcount[i]:
-            if j in corepoint:
-                pointlabel[i]=edge
+	'''
+	global dataset, noOfClusters
+	#initilize all pointlable to unassign
+	pointlabel  = [UNASSIGNED] * len(data)
+	neighbourhood_arr = []
+	#initilize list for core/noncore point
+	core_pts=[]
+	non_core_pts=[]
+	
+	#Find all neigbor for all point
+	for i in range(len(data)):
+		neighbourhood_arr.append(neighbor_points(dataset,i,Eps))
+	
+	#Find all core point, edgepoint and noise
+	for i in range(len(neighbourhood_arr)):
+		# A point is a core point if it has more than a specified number of points (MinPts) within Eps 
+		if (len(neighbourhood_arr[i]) >= MinPt):
+			pointlabel[i] = CORE_PT
+			core_pts.append(i)
+		else:
+			non_core_pts.append(i)
 
-                break
-            
-    #start assigning point to luster
-    cl = 1
-    #Using a Queue to put all neigbor core point in queue and find neigboir's neigbor
-    for i in range(len(pointlabel)):
-        q = queue.Queue()
-        if (pointlabel[i] == core):
-            pointlabel[i] = cl
-            for x in pointcount[i]:
-                if(pointlabel[x]==core):
-                    q.put(x)
-                    pointlabel[x]=cl
-                elif(pointlabel[x]==edge):
-                    pointlabel[x]=cl
-            #Stop when all point in Queue has been checked   
-            while not q.empty():
-                neighbors = pointcount[q.get()]
-                for y in neighbors:
-                    if (pointlabel[y]==core):
-                        pointlabel[y]=cl
-                        q.put(y)
-                    if (pointlabel[y]==edge):
-                        pointlabel[y]=cl            
-            cl=cl+1 #move to next cluster
-           
-    return pointlabel,cl
-    
-#Function to plot final result
-def plotRes(data, clusterRes, clusterNum):
-    nPoints = len(data)
-    scatterColors = ['black', 'green', 'brown', 'red', 'purple', 'orange', 'yellow']
-    for i in range(clusterNum):
-        if (i==0):
-            #Plot all noise point as blue
-            color='blue'
-        else:
-            color = scatterColors[i % len(scatterColors)]
-        x1 = [];  y1 = []
-        for j in range(nPoints):
-            if clusterRes[j] == i:
-                x1.append(data[j, 0])
-                y1.append(data[j, 1])
-        plt.scatter(x1, y1, c=color, alpha=1, marker='.')
+	for i in non_core_pts:
+		for j in neighbourhood_arr[i]:
+			if j in core_pts:
+				pointlabel[i] = EDGE_PT
+				break
+			
+	#start assigning point to cluster
+	cluster_no = 1
 
-def dist(self, point1, point2):
-    """Euclid distance function"""
-    x1 = point1[0]
-    x2 = point2[0]
-    y1 = point1[1]
-    y2 = point2[1]
-  # create the points
-    p1 = (x1 - x2)**2
-    p2 = (y1 - y2)**2
-    return np.sqrt(p1 + p2)
+	# Put all neigbor core point in queue and find neigboir's neigbor
+	for i in range(len(pointlabel)):
+		q = queue.Queue()
+		if (pointlabel[i] == CORE_PT):
+			pointlabel[i] = cluster_no
+			for j in neighbourhood_arr[i]:
+				if(pointlabel[j] == CORE_PT):
+					q.put(j)
+					pointlabel[j]= cluster_no
+				elif(pointlabel[j] == EDGE_PT):
+					pointlabel[j] = cluster_no
+			
+			# checking queue
+			while not q.empty():
+				neighbors = neighbourhood_arr[q.get()]
+				for n in neighbors:
+					if (pointlabel[n] == CORE_PT):
+						pointlabel[n]=cluster_no
+						q.put(n)
+					if (pointlabel[n] == EDGE_PT):
+						pointlabel[n]=cluster_no            
+			
+			cluster_no = cluster_no + 1
+	
+	noOfClusters = cluster_no
+	return pointlabel
 
-#Load Data
-raw = spio.loadmat('DBSCAN.mat')
-train = raw['Points']
+def DBSCAN_start(eps, minpts):
+	"""
+	docstring
+	"""
+	global dataset, noOfClusters
 
-#Set EPS and Minpoint
-epss = [5,10]
-minptss = [5,10]
+	print("Starting DBSCAN for EPS: {} | Minpts: {}".format(eps, minpts))
+	labels = dbscan(dataset,eps,minpts)
+	
+	plotClusters(dataset, labels, noOfClusters, INPUT_FILE+'_DBSCAN.png')
+	outliers  = labels.count(0)
 
-# Find ALl cluster, outliers in different setting and print resultsw
-for eps in epss:
-    for minpts in minptss:
-        print('Set eps = ' +str(eps)+ ', Minpoints = '+str(minpts))
-        pointlabel,cl = dbscan(train,eps,minpts)
-        plotRes(train, pointlabel, cl)
-        plt.show()
-        print('number of cluster found: ' + str(cl-1))
-        counter=collections.Counter(pointlabel)
-        print(counter)
-        outliers  = pointlabel.count(0)
-        print('numbrer of outliers found: '+str(outliers) +'\n')
+	print("No. of Clusters: {}".format(noOfClusters-1))
+	print("Outliers: {}".format(outliers))
+	
+	return noOfClusters - 1
+
+
+def calc_distance(X1, X2):
+	return (sum((X1 - X2)**2))**0.5
+
+def assign_clusters(centroids, X):
+	assigned_cluster = []
+	for i in X:
+		distance=[]
+		for j in centroids:
+			distance.append(calc_distance(i, j))
+		# print(distance)
+		# print(np.argmin(distance))
+		# print("--------------------------------")
+		assigned_cluster.append(np.argmin(distance)) # idx of minimum element
+		# print(assigned_cluster)
+	return assigned_cluster
+
+
+def calc_centroids(clusters_lables, k):
+	global dataset
+	points_per_cluster = [[] for _ in range(k)]
+	for i in range(len(clusters_lables)):
+		points_per_cluster[clusters_lables[i]].append(dataset[i])
+	
+	centroids = []
+	for i in range(k):
+		centroids.append(np.mean(points_per_cluster[i], axis=0))
+
+	return centroids
+
+def match_centroids(c_new, c_old):
+	return (np.array(c_new) == np.array(c_old)).all()
+
+
+def k_means(k):
+	"""
+	1. Initialize centroids – This is done by randomly choosing K no of points, the points can be present in the dataset or also random points.
+	2. Assign Clusters – The clusters are assigned to each point in the dataset by calculating their distance from the centroid and assigning it to the centroid with minimum distance.
+	3. Re-calculate the centroids – Updating the centroid by calculating the centroid of each cluster we have created.
+	"""
+	global dataset
+
+	print("Running k-Means for {} clusters..".format(k))
+	X = np.array(dataset)
+
+	init_centroids = random.sample(range(0, len(dataset)), k)
+
+	centroids, cluster_labels = [], []
+	for i in init_centroids:
+		centroids.append(dataset[i])
+	
+	# converting to 2D - array
+	# centroids = np.array(centroids)
+	# get_centroids = assign_clusters(centroids, X)
+
+	prev_centroids = centroids.copy()
+	for i in range(ITERATIONS):
+		print("For iteration {}: ".format(i))
+		prev_centroids = np.array(prev_centroids)
+		cluster_labels = assign_clusters(prev_centroids, X)
+		centroids = calc_centroids(cluster_labels, k)
+		
+		# print(prev_centroids)
+		print(centroids)
+		if match_centroids(centroids,prev_centroids):
+			print("Converged ...")
+			break
+		else:
+			prev_centroids = centroids.copy()
+			
+	plotClusters(dataset, cluster_labels, k, INPUT_FILE+'_k_means.png')
+	
+
+if __name__ == "__main__":
+	
+	print("Choose Training file...")
+	for i, item in enumerate(training_files, start=1):
+		print(i,item)
+	choice = int(input())
+	INPUT_FILE=training_files[choice-1]
+	read_dataset(INPUT_FILE)
+	print("1. Plot k Nearest Neighbours\n2. Run Clustering Algorithms")
+	choice = int(input())
+	if choice == 1:
+		print("Enter the value of k:")
+		k = int(input())
+		find_nearest_neighbour(k)
+	else:
+		print("Enter EPS value:")
+		eps = float(input())
+
+		print("Enter Minpts value:")
+		minpts = int(input())
+		
+		k = DBSCAN_start(eps, minpts)
+		k_means(k)
+
