@@ -47,8 +47,10 @@ def find_nearest_neighbour(k):
 	plt.savefig(INPUT_FILE+'_Nearest_Neighbour.png')
 	# plt.show()
 
-def dist(point1, point2):
-	"""Euclid distance function"""
+def euclidean_dist(point1, point2):
+	"""
+		Euclid distance function
+	"""
 	x1 = point1[0]
 	x2 = point2[0]
 	y1 = point1[1]
@@ -58,18 +60,17 @@ def dist(point1, point2):
 	p2 = (y1 - y2)**2
 	return np.sqrt(p1 + p2)
 
-
-#function to find all neigbor points in radius
-def neighbor_points(data, pointIdx, radius):
+def neighbor_points(dataset, pointIdx, radius):
+	'''
+	find all neigbor points in radius from a given point.
+	'''
 	points = []
-	for i in range(len(data)):
-		#Euclidian distance using L2 Norm
-		# if np.linalg.norm(data[i] - data[pointIdx]) <= radius:
-		if dist(data[i], data[pointIdx]) <= radius:
+	for i in range(len(dataset)):
+		# Calculating distance btn points
+		if euclidean_dist(dataset[i], dataset[pointIdx]) <= radius:
 			points.append(i)
 	return points
 
-#DB Scan algorithom
 def dbscan(data, Eps, MinPt):
 	'''
 	- Eliminate noise points
@@ -81,55 +82,57 @@ def dbscan(data, Eps, MinPt):
 	'''
 	#initilize all pointlable to unassign
 	pointlabel  = [UNASSIGNED] * len(data)
-	pointcount = []
+	neighbourhood_arr = []
 	#initilize list for core/noncore point
-	corepoint=[]
-	noncore=[]
+	core_pts=[]
+	non_core_pts=[]
 	
 	#Find all neigbor for all point
 	for i in range(len(data)):
-		pointcount.append(neighbor_points(dataset,i,Eps))
+		neighbourhood_arr.append(neighbor_points(dataset,i,Eps))
 	
 	#Find all core point, edgepoint and noise
-	for i in range(len(pointcount)):
-		if (len(pointcount[i])>=MinPt):
+	for i in range(len(neighbourhood_arr)):
+		# A point is a core point if it has more than a specified number of points (MinPts) within Eps 
+		if (len(neighbourhood_arr[i]) >= MinPt):
 			pointlabel[i]=core
-			corepoint.append(i)
+			core_pts.append(i)
 		else:
-			noncore.append(i)
+			non_core_pts.append(i)
 
-	for i in noncore:
-		for j in pointcount[i]:
-			if j in corepoint:
+	for i in non_core_pts:
+		for j in neighbourhood_arr[i]:
+			if j in core_pts:
 				pointlabel[i]=edge
-
 				break
 			
 	#start assigning point to cluster
-	cl = 1
+	cluster_no = 1
+	
 	#Using a Queue to put all neigbor core point in queue and find neigboir's neigbor
 	for i in range(len(pointlabel)):
 		q = queue.Queue()
 		if (pointlabel[i] == core):
-			pointlabel[i] = cl
-			for x in pointcount[i]:
+			pointlabel[i] = cluster_no
+			for x in neighbourhood_arr[i]:
 				if(pointlabel[x]==core):
 					q.put(x)
-					pointlabel[x]=cl
+					pointlabel[x]= cluster_no
 				elif(pointlabel[x]==edge):
-					pointlabel[x]=cl
+					pointlabel[x] = cluster_no
+			
 			#Stop when all point in Queue has been checked   
 			while not q.empty():
-				neighbors = pointcount[q.get()]
+				neighbors = neighbourhood_arr[q.get()]
 				for y in neighbors:
 					if (pointlabel[y]==core):
-						pointlabel[y]=cl
+						pointlabel[y]=cluster_no
 						q.put(y)
 					if (pointlabel[y]==edge):
-						pointlabel[y]=cl            
-			cl=cl+1 #move to next cluster
+						pointlabel[y]=cluster_no            
+			cluster_no = cluster_no+1 #move to next cluster
 			 
-	return pointlabel,cl
+	return pointlabel,cluster_no
 
 
 def calc_distance(X1, X2):
