@@ -12,10 +12,11 @@ ITERATIONS=10
 #Define label for differnt point group
 NOISE = 0
 UNASSIGNED = 0
-core=-1
-edge=-2
+CORE_PT = -1
+EDGE_PT = -2
 
 dataset = []
+noOfClusters = 0
 
 def read_dataset():
 	"""
@@ -46,6 +47,30 @@ def find_nearest_neighbour(k):
 	plt.plot(distances)
 	plt.savefig(INPUT_FILE+'_Nearest_Neighbour.png')
 	# plt.show()
+
+def plotClusters(dataset, labels, noOfClusters, file):
+	total_points = len(dataset)
+	print("Plotting for {} points".format(total_points))
+	plt.figure()
+
+	# Color array for clusters
+	scatterColors = ['black', 'green', 'brown', 'red', 'purple', 'orange', 'yellow']
+	for i in range(noOfClusters):
+		if (i==0):
+			#Plot all noise point as blue
+			color='blue'
+		else:
+			color = scatterColors[i % len(scatterColors)]
+		
+		x = [];  y = []
+		for j in range(total_points):
+			if labels[j] == i:
+				x.append(dataset[j][0])
+				y.append(dataset[j][1])
+		plt.scatter(x, y, c=color, alpha=1, marker='.')
+	
+	# plt.show()
+	plt.savefig(file)
 
 def euclidean_dist(point1, point2):
 	"""
@@ -80,6 +105,7 @@ def dbscan(data, Eps, MinPt):
 		> Assign border point to one of the clusters of its associated core points
 
 	'''
+	global dataset, noOfClusters
 	#initilize all pointlable to unassign
 	pointlabel  = [UNASSIGNED] * len(data)
 	neighbourhood_arr = []
@@ -95,7 +121,7 @@ def dbscan(data, Eps, MinPt):
 	for i in range(len(neighbourhood_arr)):
 		# A point is a core point if it has more than a specified number of points (MinPts) within Eps 
 		if (len(neighbourhood_arr[i]) >= MinPt):
-			pointlabel[i]=core
+			pointlabel[i] = CORE_PT
 			core_pts.append(i)
 		else:
 			non_core_pts.append(i)
@@ -103,36 +129,38 @@ def dbscan(data, Eps, MinPt):
 	for i in non_core_pts:
 		for j in neighbourhood_arr[i]:
 			if j in core_pts:
-				pointlabel[i]=edge
+				pointlabel[i] = EDGE_PT
 				break
 			
 	#start assigning point to cluster
 	cluster_no = 1
-	
-	#Using a Queue to put all neigbor core point in queue and find neigboir's neigbor
+
+	# Put all neigbor core point in queue and find neigboir's neigbor
 	for i in range(len(pointlabel)):
 		q = queue.Queue()
-		if (pointlabel[i] == core):
+		if (pointlabel[i] == CORE_PT):
 			pointlabel[i] = cluster_no
-			for x in neighbourhood_arr[i]:
-				if(pointlabel[x]==core):
-					q.put(x)
-					pointlabel[x]= cluster_no
-				elif(pointlabel[x]==edge):
-					pointlabel[x] = cluster_no
+			for j in neighbourhood_arr[i]:
+				if(pointlabel[j] == CORE_PT):
+					q.put(j)
+					pointlabel[j]= cluster_no
+				elif(pointlabel[j] == EDGE_PT):
+					pointlabel[j] = cluster_no
 			
-			#Stop when all point in Queue has been checked   
+			# checking queue
 			while not q.empty():
 				neighbors = neighbourhood_arr[q.get()]
-				for y in neighbors:
-					if (pointlabel[y]==core):
-						pointlabel[y]=cluster_no
-						q.put(y)
-					if (pointlabel[y]==edge):
-						pointlabel[y]=cluster_no            
-			cluster_no = cluster_no+1 #move to next cluster
-			 
-	return pointlabel,cluster_no
+				for n in neighbors:
+					if (pointlabel[n] == CORE_PT):
+						pointlabel[n]=cluster_no
+						q.put(n)
+					if (pointlabel[n] == EDGE_PT):
+						pointlabel[n]=cluster_no            
+			
+			cluster_no = cluster_no + 1
+	
+	noOfClusters = cluster_no
+	return pointlabel
 
 
 def calc_distance(X1, X2):
@@ -166,7 +194,7 @@ def k_means(k):
 	global dataset
 	X = np.array(dataset)
 
-	init_centroids = random.sample(range(0, len(dataset)), 3)
+	init_centroids = random.sample(range(0, len(dataset)), k)
 
 	centroids = []
 	for i in init_centroids:
@@ -177,86 +205,51 @@ def k_means(k):
 	centroids = np.array(centroids)
 	get_centroids = findClosestCentroids(centroids, X)
 
-	# # computing the mean of separated clusters
-	# cent={}
-	# for k in range(K):
-	#     cent[k+1]=np.array([]).reshape(2,0)
-
-	# # assigning of clusters to points
-	# for k in range(m):
-	#     cent[minimum[k]]=np.c_[cent[minimum[k]],X[k]]
-	# for k in range(K):
-	#     cent[k+1]=cent[k+1].T
-
-	# # computing mean and updating it
-	# for k in range(K):
-	#      centroids[:,k]=np.mean(cent[k+1],axis=0)
 	prev_centr = []
 	for i in range(ITERATIONS):
 		get_centroids = findClosestCentroids(centroids, X)
 		centroids = calc_centroids(get_centroids, X)
 		# print(centroids)
 
-	plt.figure()
-	plt.scatter(np.array(centroids)[:, 0], np.array(centroids)[:, 1], color='black')
-	plt.scatter(X[:, 0], X[:, 1], alpha=0.1)
-	plt.savefig(INPUT_FILE+'_k_means.png')
+	plotClusters(dataset, centroids, k, INPUT_FILE+'_k_means.png')
+	# plt.figure()
+	# plt.scatter(np.array(centroids)[:, 0], np.array(centroids)[:, 1], color='black')
+	# plt.scatter(X[:, 0], X[:, 1], alpha=0.1)
+	# plt.savefig(INPUT_FILE+'_k_means.png')
 	# plt.show()
-
-
-#Function to plot final result
-def plotRes(data, clusterRes, clusterNum):
-	nPoints = len(data)
-	print("Plotting for {} points".format(nPoints))
-	plt.figure()
-	scatterColors = ['black', 'green', 'brown', 'red', 'purple', 'orange', 'yellow']
-	for i in range(clusterNum):
-		if (i==0):
-			#Plot all noise point as blue
-			color='blue'
-		else:
-			color = scatterColors[i % len(scatterColors)]
-		x1 = [];  y1 = []
-		for j in range(nPoints):
-			if clusterRes[j] == i:
-				x1.append(data[j][0])
-				y1.append(data[j][1])
-		plt.scatter(x1, y1, c=color, alpha=1, marker='.')
 
 
 def DBSCAN_start(eps, minpts):
 	"""
 	docstring
 	"""
-	global dataset
+	global dataset, noOfClusters
 
-	print('Set eps = ' +str(eps)+ ', Minpoints = '+str(minpts))
-	pointlabel,cl = dbscan(dataset,eps,minpts)
-	print(cl)
-	# print(pointlabel)
-	plotRes(dataset, pointlabel, cl)
-	plt.savefig(INPUT_FILE+'_DBSCAN.png')
-	# plt.show()
-	print('number of cluster found: ' + str(cl-1))
-	counter=collections.Counter(pointlabel)
-	print(counter)
-	outliers  = pointlabel.count(0)
-	print('numbrer of outliers found: '+str(outliers) +'\n')
+	print("Starting DBSCAN for EPS: {} | Minpts: {}".format(eps, minpts))
+	labels = dbscan(dataset,eps,minpts)
 	
-	return cl
+	plotClusters(dataset, labels, noOfClusters, INPUT_FILE+'_DBSCAN.png')
+	outliers  = labels.count(0)
+
+	print("No. of Clusters: {}".format(noOfClusters))
+	print("Outliers: {}".format(outliers))
+	
+	return noOfClusters
 
 if __name__ == "__main__":
+	
 	print("Reading file")
 	read_dataset()
 	find_nearest_neighbour(4)
+	
 	#Set EPS and Minpoint
 	epss = [5]
 	minptss = [5]
 
-	noOfClusters = 2
+	k = 0
 	# Find ALl cluster, outliers in different setting and print resultsw
 	for eps in epss:
 		for minpts in minptss:
-			noOfClusters = DBSCAN_start(eps, minpts)
+			k = DBSCAN_start(eps, minpts)
 
-	k_means(noOfClusters-1)
+	k_means(k)
