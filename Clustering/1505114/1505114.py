@@ -6,7 +6,7 @@ import queue
 
 training_files = ["bisecting.txt","blobs.txt","moons.txt"]
 INPUT_FILE="blobs.txt"
-ITERATIONS=20
+ITERATIONS=50
 #Define label for differnt point group
 UNASSIGNED = 0
 CORE_PT = -1
