@@ -10,7 +10,7 @@ ITERATIONS=50
 #Define label for differnt point group
 UNASSIGNED = 0
 CORE_PT = -1
-EDGE_PT = -2
+BORDER_PT = -2
 
 dataset = []
 noOfClusters = 0
@@ -125,7 +125,7 @@ def dbscan(data, Eps, MinPt):
 	for i in non_core_pts:
 		for j in neighbourhood_arr[i]:
 			if j in core_pts:
-				pointlabel[i] = EDGE_PT
+				pointlabel[i] = BORDER_PT
 				break
 			
 	#start assigning point to cluster
@@ -140,7 +140,7 @@ def dbscan(data, Eps, MinPt):
 				if(pointlabel[j] == CORE_PT):
 					q.put(j)
 					pointlabel[j]= cluster_no
-				elif(pointlabel[j] == EDGE_PT):
+				elif(pointlabel[j] == BORDER_PT):
 					pointlabel[j] = cluster_no
 			
 			# checking queue
@@ -150,7 +150,7 @@ def dbscan(data, Eps, MinPt):
 					if (pointlabel[n] == CORE_PT):
 						pointlabel[n]=cluster_no
 						q.put(n)
-					if (pointlabel[n] == EDGE_PT):
+					if (pointlabel[n] == BORDER_PT):
 						pointlabel[n]=cluster_no            
 			
 			cluster_no = cluster_no + 1
